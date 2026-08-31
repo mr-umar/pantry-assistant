@@ -13,4 +13,4 @@
 
 ## Part-Specific Notes
 
-* **`Body.stl`**: Make sure to **enable tree supports** before slicing to ensure clean overhangs and easy removal.
+* **`Body.stl`**: Make sure to **enable tree supports** before slicing to ensure clean overhangs and easy removal. Print with 4 walls.
