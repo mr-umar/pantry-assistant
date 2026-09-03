@@ -8,7 +8,7 @@
 | **Layer Height** | 0.16 mm – 0.24 mm |
 | **Walls** | > 4 perimeters |
 | **Infill** | 15% – 20% |
-| **Supports** | Tree Supports (enabled for `Body.stl`) |
+| **Supports** | Tree Supports (enabled for `HUB_Base.stl`) |
 
 ---
 
@@ -20,4 +20,4 @@
 
 ## Part-Specific Notes
 
-* **`Body.stl`**: Make sure to **enable tree supports** before slicing to ensure clean overhangs and easy removal.
+* **`HUB_Base.stl`**: Make sure to **enable tree supports** before slicing to ensure clean overhangs and easy removal.
