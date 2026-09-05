@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asistente de Despensa Inteligente - Arduino UNO Q</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #0a0d14;
+            --bg-surface: #121824;
+            --bg-card: rgba(23, 31, 46, 0.75);
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --border-focus: rgba(0, 229, 255, 0.5);
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-cyan: #00e5ff;
+            --accent-emerald: #10b981;
+            --accent-amber: #f59e0b;
+            --accent-rose: #f43f5e;
+            --accent-violet: #8b5cf6;
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+            --shadow-card: 0 10px 30px -5px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--border-subtle);
+            --glow-cyan: 0 0 20px rgba(0, 229, 255, 0.25);
+            --glow-emerald: 0 0 20px rgba(16, 185, 129, 0.25);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            line-height: 1.5;
+            background-image: 
+                radial-gradient(ellipse 60% 50% at 50% -20%, rgba(0, 229, 255, 0.12), transparent 70%),
+                radial-gradient(ellipse 40% 40% at 90% 80%, rgba(139, 92, 246, 0.08), transparent 60%);
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 1280px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* Top Header */
+        header.app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            padding: 20px 28px;
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-subtle);
+            box-shadow: var(--shadow-card);
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .brand-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-md);
+            background: linear-gradient(135deg, #00e5ff 0%, #3b82f6 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #030712;
+            font-size: 24px;
+            font-weight: 800;
+            box-shadow: var(--glow-cyan);
+        }
+
+        .brand-title h1 {
+            font-size: 1.45rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .brand-title p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .badge-chip {
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: rgba(0, 229, 255, 0.12);
+            color: var(--accent-cyan);
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* Audio Primary Button */
+        .btn-audio-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            border-radius: var(--radius-md);
+            font-family: inherit;
+            font-weight: 700;
+            font-size: 0.92rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        .btn-audio-active {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: #ffffff;
+            box-shadow: var(--glow-emerald);
+        }
+
+        .btn-audio-active:hover {
+            opacity: 0.95;
+            transform: translateY(-1px);
+        }
+
+        .btn-audio-muted {
+            background: rgba(244, 63, 94, 0.15);
+            color: var(--accent-rose);
+            border-color: rgba(244, 63, 94, 0.3);
+        }
+
+        .btn-audio-muted:hover {
+            background: rgba(244, 63, 94, 0.25);
+        }
+
+        /* Audio Wave Animation */
+        .audio-wave {
+            display: none;
+            align-items: center;
+            gap: 3px;
+            height: 18px;
+        }
+
+        .audio-wave.speaking {
+            display: flex;
+        }
+
+        .audio-wave span {
+            width: 3px;
+            height: 100%;
+            background: #ffffff;
+            border-radius: 2px;
+            animation: waveAnim 0.8s ease-in-out infinite alternate;
+        }
+
+        .audio-wave span:nth-child(2) { animation-delay: 0.2s; }
+        .audio-wave span:nth-child(3) { animation-delay: 0.4s; }
+        .audio-wave span:nth-child(4) { animation-delay: 0.1s; }
+
+        @keyframes waveAnim {
+            0% { transform: scaleY(0.25); }
+            100% { transform: scaleY(1); }
+        }
+
+        /* Main Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1.4fr 1fr;
+            gap: 24px;
+        }
+
+        @media (max-width: 1024px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            box-shadow: var(--shadow-card);
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            position: relative;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 14px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .card-header h2 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Video Container */
+        .video-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background: #030712;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            border: 1px solid var(--border-subtle);
+            box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.8);
+        }
+
+        .video-stream {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* Video Overlay Elements */
+        .video-overlay {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            border-radius: var(--radius-md);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .overlay-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .live-tag {
+            background: rgba(16, 185, 129, 0.85);
+            color: #fff;
+            font-size: 0.75rem;
+            font-weight: 800;
+            padding: 4px 10px;
+            border-radius: 6px;
+            letter-spacing: 0.05em;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+        }
+
+        .live-tag::before {
+            content: '';
+            width: 7px;
+            height: 7px;
+            background: #fff;
+            border-radius: 50%;
+            animation: pulse 1.2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.85); }
+        }
+
+        .target-reticle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60%;
+            height: 60%;
+            border: 2px dashed rgba(0, 229, 255, 0.4);
+            border-radius: 12px;
+            pointer-events: none;
+            transition: border-color 0.3s ease;
+        }
+
+        .target-reticle.in-range {
+            border-color: rgba(16, 185, 129, 0.9);
+            box-shadow: inset 0 0 20px rgba(16, 185, 129, 0.2);
+        }
+
+        /* Proximity Range Meter */
+        .proximity-section {
+            background: rgba(10, 13, 20, 0.5);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 16px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .proximity-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .proximity-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .proximity-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--accent-cyan);
+        }
+
+        .proximity-bar-container {
+            position: relative;
+            height: 12px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .proximity-target-zone {
+            position: absolute;
+            left: 33.33%; /* 200mm / 600mm */
+            width: 33.33%; /* 200mm to 400mm */
+            height: 100%;
+            background: rgba(16, 185, 129, 0.3);
+            border-left: 2px solid var(--accent-emerald);
+            border-right: 2px solid var(--accent-emerald);
+        }
+
+        .proximity-cursor {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 6px;
+            background: var(--accent-cyan);
+            border-radius: 3px;
+            box-shadow: 0 0 10px var(--accent-cyan);
+            transition: left 0.15s ease-out;
+            transform: translateX(-50%);
+        }
+
+        .proximity-scale {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Detection Result Banner */
+        .result-box {
+            background: linear-gradient(145deg, rgba(18, 24, 36, 0.95), rgba(23, 31, 46, 0.85));
+            border-radius: var(--radius-md);
+            padding: 20px;
+            border: 1px solid var(--border-subtle);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .result-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--text-muted);
+            transition: background-color 0.3s ease;
+        }
+
+        .result-box.detected-model::before {
+            background: var(--accent-emerald);
+            box-shadow: 0 0 12px var(--accent-emerald);
+        }
+
+        .result-box.detected-ocr::before {
+            background: var(--accent-cyan);
+            box-shadow: 0 0 12px var(--accent-cyan);
+        }
+
+        .result-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .result-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .tag-idle { background: rgba(148, 163, 184, 0.12); color: var(--text-muted); }
+        .tag-model { background: rgba(16, 185, 129, 0.18); color: var(--accent-emerald); border: 1px solid rgba(16, 185, 129, 0.3); }
+        .tag-ocr { background: rgba(0, 229, 255, 0.18); color: var(--accent-cyan); border: 1px solid rgba(0, 229, 255, 0.3); }
+
+        .result-title {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            word-break: break-word;
+            min-height: 2.2rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .result-subtext {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .btn-action-sm {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-primary);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            padding: 6px 12px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-action-sm:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+        }
+
+        /* Voice & Audio Controls Card */
+        .audio-controls-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        @media (max-width: 600px) {
+            .audio-controls-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .control-group label {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .control-group select, .control-group input[type="range"] {
+            width: 100%;
+            background: rgba(10, 13, 20, 0.6);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            padding: 8px 12px;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.85rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .control-group select:focus {
+            border-color: var(--accent-cyan);
+        }
+
+        .slider-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .slider-val {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            min-width: 32px;
+        }
+
+        /* History Feed */
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 240px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .history-list::-webkit-scrollbar {
+            width: 5px;
+        }
+        .history-list::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 4px;
+        }
+
+        .history-item {
+            background: rgba(10, 13, 20, 0.4);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            padding: 10px 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            transition: background 0.15s;
+        }
+
+        .history-item:hover {
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .history-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            overflow: hidden;
+        }
+
+        .history-text {
+            font-weight: 600;
+            font-size: 0.88rem;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .history-meta {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Status Toast / Banner */
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            background: rgba(255, 255, 255, 0.05);
+            padding: 6px 12px;
+            border-radius: 999px;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-cyan);
+            box-shadow: 0 0 8px var(--accent-cyan);
+        }
+
+        footer.app-footer {
+            margin-top: 10px;
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-brand">
+                <div class="brand-icon">👁️</div>
+                <div class="brand-title">
+                    <h1>
+                        Pantry Assistant
+                        <span class="badge-chip">Arduino UNO Q</span>
+                    </h1>
+                    <p>Reconocimiento Autónomo por Visión y Audio para Baja Visión</p>
+                </div>
+            </div>
+
+            <div class="header-actions">
+                <!-- Audio Synthesis Unlock / Toggle Button -->
+                <button id="btn-toggle-audio" class="btn-audio-primary btn-audio-muted" onclick="toggleAudioEngine()">
+                    <span id="audio-icon">🔇</span>
+                    <span id="audio-label">Activar Voz del Navegador</span>
+                    <div id="audio-wave" class="audio-wave">
+                        <span></span><span></span><span></span><span></span>
+                    </div>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Dashboard Content -->
+        <main class="dashboard-grid">
+            <!-- Left Column: Video & Distance -->
+            <section class="card">
+                <div class="card-header">
+                    <h2>📹 Visor de Cámara en Directo</h2>
+                    <div class="status-pill">
+                        <div class="status-dot"></div>
+                        <span id="status-span">Iniciando escaneo...</span>
+                    </div>
+                </div>
+
+                <div class="video-wrapper">
+                    <img id="videofeed" class="video-stream" src="/videofeed" alt="Live Camera Feed">
+                    <div class="video-overlay">
+                        <div class="overlay-top">
+                            <span class="live-tag">EN VIVO</span>
+                            <span id="time-badge" class="badge-chip" style="background: rgba(0,0,0,0.6);">0.000 s</span>
+                        </div>
+                        <div id="reticle" class="target-reticle"></div>
+                    </div>
+                </div>
+
+                <!-- Distance Range Indicator -->
+                <div class="proximity-section">
+                    <div class="proximity-header">
+                        <span class="proximity-label">Sensor Láser de Distancia (ToF Modulino)</span>
+                        <span class="proximity-value"><span id="dist-span">--</span> mm</span>
+                    </div>
+
+                    <div class="proximity-bar-container">
+                        <div class="proximity-target-zone" title="Rango Óptimo de Captura: 200 - 400 mm"></div>
+                        <div id="proximity-cursor" class="proximity-cursor" style="left: 0%;"></div>
+                    </div>
+
+                    <div class="proximity-scale">
+                        <span>0 mm</span>
+                        <span style="color: var(--accent-emerald); font-weight: 700;">200 mm (Zona de Enfoque) 400 mm</span>
+                        <span>600 mm+</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Column: Results & Audio Config -->
+            <section style="display: flex; flex-direction: column; gap: 24px;">
+                <!-- Main Detection Result Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2>🎯 Identificación Actual</h2>
+                        <button class="btn-action-sm" onclick="repeatLastDetection()">
+                            🔊 Repetir Audio
+                        </button>
+                    </div>
+
+                    <div id="result-box" class="result-box">
+                        <div class="result-meta">
+                            <span id="result-tag" class="result-tag tag-idle">Esperando Objeto</span>
+                            <span id="result-time" style="font-size: 0.75rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;">--:--:--</span>
+                        </div>
+                        <div id="res-span" class="result-title">Coloca un producto frente al sensor</div>
+                        <div class="result-subtext">
+                            <span id="res-detail">Distancia recomendada: entre 20 y 40 cm</span>
+                            <span id="res-confidence" style="font-weight: 700; color: var(--accent-cyan);"></span>
+                        </div>
+                    </div>
+
+                    <!-- Quick Testing / Simulation Buttons -->
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button class="btn-action-sm" onclick="testVoiceSynthesis()">
+                            🧪 Probar Voz
+                        </button>
+                        <button class="btn-action-sm" onclick="simulateDetection('Garbanzos Cocidos', 'model', 0.94)">
+                            🥫 Simular Modelo
+                        </button>
+                        <button class="btn-action-sm" onclick="simulateDetection('TOMATE FRITO RECETA ARTESANA 350G', 'ocr', 0.88)">
+                            🍅 Simular OCR
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Voice & Audio Configuration -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2>⚙️ Configuración de Síntesis de Voz</h2>
+                    </div>
+
+                    <div class="audio-controls-grid">
+                        <div class="control-group" style="grid-column: span 2;">
+                            <label for="voice-select">Voz del Navegador (Español recomendado)</label>
+                            <select id="voice-select" onchange="onVoiceChange()"></select>
+                        </div>
+
+                        <div class="control-group">
+                            <label>Velocidad de Habla: <span id="rate-val" class="slider-val">1.0x</span></label>
+                            <div class="slider-wrapper">
+                                <input type="range" id="speech-rate" min="0.6" max="1.6" step="0.1" value="1.0" oninput="updateSpeechConfig()">
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label>Volumen: <span id="vol-val" class="slider-val">100%</span></label>
+                            <div class="slider-wrapper">
+                                <input type="range" id="speech-volume" min="0.1" max="1.0" step="0.05" value="1.0" oninput="updateSpeechConfig()">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Detections Log -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2>📜 Historial Reciente</h2>
+                        <span id="history-count" class="badge-chip">0 items</span>
+                    </div>
+
+                    <div id="history-list" class="history-list">
+                        <div style="text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 20px;">
+                            Sin detecciones registradas aún
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="app-footer">
+            Autonomous Pantry Assistant &bull; Hackestiu 2026 &bull; Arduino UNO Q (Dual-Core STM32 & Qualcomm Dragonwing)
+        </footer>
+    </div>
+
+    <!-- Application Script -->
+    <script>
+        // Audio Engine State
+        let isAudioEnabled = false;
+        let lastSpokenDetectionId = -1;
+        let availableVoices = [];
+        let selectedVoice = null;
+        let detectionHistory = [];
+
+        // Speech Parameters
+        let speechRate = 1.0;
+        let speechPitch = 1.0;
+        let speechVolume = 1.0;
+        let lastSpokenText = "";
+
+        // Elements
+        const btnToggleAudio = document.getElementById('btn-toggle-audio');
+        const audioIcon = document.getElementById('audio-icon');
+        const audioLabel = document.getElementById('audio-label');
+        const audioWave = document.getElementById('audio-wave');
+        const voiceSelect = document.getElementById('voice-select');
+        const rateSlider = document.getElementById('speech-rate');
+        const volSlider = document.getElementById('speech-volume');
+        const rateVal = document.getElementById('rate-val');
+        const volVal = document.getElementById('vol-val');
+
+        const distSpan = document.getElementById('dist-span');
+        const statusSpan = document.getElementById('status-span');
+        const resSpan = document.getElementById('res-span');
+        const resDetail = document.getElementById('res-detail');
+        const resConfidence = document.getElementById('res-confidence');
+        const timeBadge = document.getElementById('time-badge');
+        const resultBox = document.getElementById('result-box');
+        const resultTag = document.getElementById('result-tag');
+        const resultTime = document.getElementById('result-time');
+        const proximityCursor = document.getElementById('proximity-cursor');
+        const reticle = document.getElementById('reticle');
+        const historyList = document.getElementById('history-list');
+        const historyCount = document.getElementById('history-count');
+
+        // Initialize Speech Synthesis Voices
+        function initVoiceSelector() {
+            if (!('speechSynthesis' in window)) {
+                audioLabel.innerText = "Navegador sin soporte de voz";
+                btnToggleAudio.disabled = true;
+                return;
+            }
+
+            const populateVoices = () => {
+                availableVoices = window.speechSynthesis.getVoices();
+                if (!availableVoices.length) return;
+
+                voiceSelect.innerHTML = '';
+
+                // Prioritize Spanish voices
+                let defaultIndex = 0;
+                let spanishIndex = availableVoices.findIndex(v => v.lang.startsWith('es'));
+
+                availableVoices.forEach((voice, index) => {
+                    const opt = document.createElement('option');
+                    opt.value = index;
+                    opt.textContent = `${voice.name} (${voice.lang})${voice.default ? ' [Por defecto]' : ''}`;
+                    if (voice.lang.startsWith('es')) {
+                        opt.textContent = `⭐ ` + opt.textContent;
+                    }
+                    voiceSelect.appendChild(opt);
+                });
+
+                if (spanishIndex !== -1) {
+                    voiceSelect.selectedIndex = spanishIndex;
+                    selectedVoice = availableVoices[spanishIndex];
+                } else {
+                    selectedVoice = availableVoices[0];
+                }
+            };
+
+            populateVoices();
+            if (speechSynthesis.onvoiceschanged !== undefined) {
+                speechSynthesis.onvoiceschanged = populateVoices;
+            }
+        }
+
+        function onVoiceChange() {
+            const idx = parseInt(voiceSelect.value, 10);
+            if (!isNaN(idx) && availableVoices[idx]) {
+                selectedVoice = availableVoices[idx];
+            }
+        }
+
+        function updateSpeechConfig() {
+            speechRate = parseFloat(rateSlider.value);
+            speechVolume = parseFloat(volSlider.value);
+            rateVal.textContent = `${speechRate.toFixed(1)}x`;
+            volVal.textContent = `${Math.round(speechVolume * 100)}%`;
+        }
+
+        // Toggle Audio Engine
+        function toggleAudioEngine() {
+            if (!('speechSynthesis' in window)) {
+                alert("Tu navegador no soporta la API de voz Web Speech.");
+                return;
+            }
+
+            isAudioEnabled = !isAudioEnabled;
+
+            if (isAudioEnabled) {
+                btnToggleAudio.className = "btn-audio-primary btn-audio-active";
+                audioIcon.textContent = "🔊";
+                audioLabel.textContent = "Audio Activo (Voz en Navegador)";
+                speakText("Asistente de despensa listo. Audio activado.");
+            } else {
+                btnToggleAudio.className = "btn-audio-primary btn-audio-muted";
+                audioIcon.textContent = "🔇";
+                audioLabel.textContent = "Activar Voz del Navegador";
+                window.speechSynthesis.cancel();
+                setSpeakingVisual(false);
+            }
+        }
+
+        function setSpeakingVisual(speaking) {
+            if (speaking) {
+                audioWave.classList.add('speaking');
+            } else {
+                audioWave.classList.remove('speaking');
+            }
+        }
+
+        // Speak function using Web Speech API
+        function speakText(textToSpeak) {
+            if (!isAudioEnabled || !textToSpeak || !('speechSynthesis' in window)) {
+                return;
+            }
+
+            try {
+                window.speechSynthesis.cancel(); // Stop prior speech to prevent lag
+
+                const utterance = new SpeechSynthesisUtterance(textToSpeak);
+                if (selectedVoice) {
+                    utterance.voice = selectedVoice;
+                }
+                utterance.rate = speechRate;
+                utterance.pitch = speechPitch;
+                utterance.volume = speechVolume;
+
+                utterance.onstart = () => {
+                    setSpeakingVisual(true);
+                };
+                utterance.onend = () => {
+                    setSpeakingVisual(false);
+                };
+                utterance.onerror = (e) => {
+                    console.warn("Speech error:", e);
+                    setSpeakingVisual(false);
+                };
+
+                window.speechSynthesis.speak(utterance);
+                lastSpokenText = textToSpeak;
+            } catch (err) {
+                console.error("Error invoking speech synthesis:", err);
+                setSpeakingVisual(false);
+            }
+        }
+
+        function repeatLastDetection() {
+            if (!isAudioEnabled) {
+                toggleAudioEngine();
+            }
+            if (lastSpokenText) {
+                speakText(lastSpokenText);
+            } else {
+                speakText("Aún no se ha realizado ninguna detección.");
+            }
+        }
+
+        function testVoiceSynthesis() {
+            if (!isAudioEnabled) {
+                toggleAudioEngine();
+            }
+            speakText("Prueba de audio completada correctamente.");
+        }
+
+        // Add to History
+        function addToHistory(title, type, detail) {
+            const timeStr = new Date().toLocaleTimeString();
+            detectionHistory.unshift({ title, type, detail, timeStr });
+            if (detectionHistory.length > 20) detectionHistory.pop();
+
+            historyCount.textContent = `${detectionHistory.length} items`;
+
+            historyList.innerHTML = detectionHistory.map((item, idx) => `
+                <div class="history-item">
+                    <div class="history-info">
+                        <span class="history-text">${escapeHtml(item.title)}</span>
+                        <span class="history-meta">
+                            <span style="color: ${item.type === 'model' ? 'var(--accent-emerald)' : 'var(--accent-cyan)'}; font-weight: 700;">
+                                ${item.type === 'model' ? 'MODELO' : 'OCR'}
+                            </span> &bull; ${item.timeStr} &bull; ${escapeHtml(item.detail || '')}
+                        </span>
+                    </div>
+                    <button class="btn-action-sm" onclick="speakFromHistory(${idx})">
+                        🔊
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function speakFromHistory(idx) {
+            if (detectionHistory[idx]) {
+                if (!isAudioEnabled) toggleAudioEngine();
+                const item = detectionHistory[idx];
+                const msg = item.type === 'model' ? `Detectado: ${item.title}` : `Texto detectado: ${item.title}`;
+                speakText(msg);
+            }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>"']/g, function(m) {
+                return {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#39;'
+                }[m];
+            });
+        }
+
+        // UI Updates for Distance
+        function updateDistanceUI(dist) {
+            distSpan.textContent = dist > 0 ? dist : '--';
+
+            if (dist > 0) {
+                // Range mapped to 0-600mm
+                const percentage = Math.min(100, Math.max(0, (dist / 600) * 100));
+                proximityCursor.style.left = `${percentage}%`;
+
+                // Highlight optimal zone (200 - 400 mm)
+                if (dist >= 200 && dist <= 400) {
+                    proximityCursor.style.background = 'var(--accent-emerald)';
+                    proximityCursor.style.boxShadow = '0 0 12px var(--accent-emerald)';
+                    reticle.classList.add('in-range');
+                } else {
+                    proximityCursor.style.background = 'var(--accent-cyan)';
+                    proximityCursor.style.boxShadow = '0 0 8px var(--accent-cyan)';
+                    reticle.classList.remove('in-range');
+                }
+            } else {
+                proximityCursor.style.left = `0%`;
+                reticle.classList.remove('in-range');
+            }
+        }
+
+        // Process Telemetry Payload
+        function processTelemetry(data) {
+            updateDistanceUI(data.distance);
+            statusSpan.textContent = data.status || 'Escaneando...';
+            if (typeof data.time === 'number') {
+                timeBadge.textContent = `${data.time.toFixed(3)} s`;
+            }
+
+            // Check for detection events
+            if (data.detection && data.detection.id && data.detection.id !== lastSpokenDetectionId) {
+                lastSpokenDetectionId = data.detection.id;
+                const d = data.detection;
+
+                resultTime.textContent = new Date().toLocaleTimeString();
+
+                if (d.type === 'model') {
+                    resultBox.className = 'result-box detected-model';
+                    resultTag.className = 'result-tag tag-model';
+                    resultTag.textContent = 'Modelo Edge Impulse';
+                    resSpan.textContent = d.label;
+                    resDetail.textContent = `Identificado con modelo neuronal`;
+                    resConfidence.textContent = `Confianza: ${Math.round((d.score || 0) * 100)}%`;
+
+                    addToHistory(d.label, 'model', `Confianza: ${(d.score || 0).toFixed(2)}`);
+
+                    // Speak aloud via browser
+                    const phrase = d.spoken_text || `Detectado: ${d.label}`;
+                    speakText(phrase);
+
+                } else if (d.type === 'ocr') {
+                    resultBox.className = 'result-box detected-ocr';
+                    resultTag.className = 'result-tag tag-ocr';
+                    resultTag.textContent = 'OCR RapidOCR';
+                    resSpan.textContent = d.label || d.text || 'Texto detectado';
+                    resDetail.textContent = `Texto leído en packaging`;
+                    resConfidence.textContent = `OCR Fallback`;
+
+                    addToHistory(d.label || d.text, 'ocr', 'Lectura de texto');
+
+                    // Speak aloud via browser
+                    const phrase = d.spoken_text || `Texto detectado: ${d.label || d.text}`;
+                    speakText(phrase);
+                }
+            }
+        }
+
+        // Polling loop
+        function pollTelemetry() {
+            fetch('/telemetry')
+                .then(r => {
+                    if (!r.ok) throw new Error("HTTP error " + r.status);
+                    return r.json();
+                })
+                .then(data => {
+                    processTelemetry(data);
+                })
+                .catch(err => {
+                    // Fail silently during connection loss
+                });
+        }
+
+        // Local Simulation for testing/demo
+        function simulateDetection(label, type, score) {
+            const mockData = {
+                distance: 310,
+                status: "Objeto estable a 310 mm. Evaluando...",
+                result: type === 'model' ? `Model: ${label} (${score.toFixed(2)})` : `OCR Fallback: ${label}`,
+                time: 0.145,
+                detection: {
+                    id: Date.now(),
+                    type: type,
+                    label: label,
+                    score: score,
+                    text: label,
+                    spoken_text: type === 'model' ? `Detectado: ${label}` : `Texto detectado: ${label}`,
+                    timestamp: Date.now() / 1000
+                }
+            };
+            processTelemetry(mockData);
+        }
+
+        // Start initialization on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            initVoiceSelector();
+            updateSpeechConfig();
+            setInterval(pollTelemetry, 250);
+        });
+    </script>
+</body>
+</html>

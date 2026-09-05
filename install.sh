@@ -15,16 +15,16 @@ echo -e "${BOLD}${CYAN}=========================================================
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # 1. System packages
-echo -e "\n${BOLD}[1/4] Checking and installing Debian system packages...${NC}"
+echo -e "\n${BOLD}[1/5] Checking and installing Debian system packages...${NC}"
 sudo apt update
-sudo apt install -y python3-pip python3-opencv python3-pyaudio portaudio19-dev python3-msgpack
+sudo apt install -y python3-pip python3-opencv python3-pyaudio portaudio19-dev python3-msgpack curl
 
 # 2. Python packages
-echo -e "\n${BOLD}[2/4] Installing Python dependencies via pip...${NC}"
+echo -e "\n${BOLD}[2/5] Installing Python dependencies via pip...${NC}"
 pip install -r "${SCRIPT_DIR}/src/requirements.txt" --break-system-packages
 
 # 3. Model permissions
-echo -e "\n${BOLD}[3/4] Checking Edge Impulse model binary...${NC}"
+echo -e "\n${BOLD}[3/5] Checking Edge Impulse model binary...${NC}"
 if [ -f "${SCRIPT_DIR}/src/model.eim" ]; then
     chmod +x "${SCRIPT_DIR}/src/model.eim"
     echo -e "${GREEN}✓ Execution permissions granted to src/model.eim${NC}"
@@ -33,7 +33,7 @@ else
 fi
 
 # 4. Flash STM32 microcontroller
-echo -e "\n${BOLD}[4/4] Setting up STM32 microcontroller firmware...${NC}"
+echo -e "\n${BOLD}[4/5] Setting up STM32 microcontroller firmware...${NC}"
 
 # Check if libraries are already installed to skip slow index downloads
 if ! arduino-cli lib list | grep -q "Arduino_Modulino" || ! arduino-cli lib list | grep -q "Arduino_RouterBridge"; then
@@ -46,14 +46,33 @@ fi
 
 echo -e "\n${BOLD}${YELLOW}-----------------------------------------------------------------${NC}"
 echo -e "${BOLD}${YELLOW} [NOTICE] Compiling Zephyr OS & flasing the STM32 microcontroller...${NC}"
-echo -e "${YELLOW} This step typically takes 40-90 seconds on the UNO Q.${NC}"
+echo -e "${YELLOW} This step can take several minutes.${NC}"
 echo -e "${YELLOW} Please DO NOT disconnect or cancel the process.${NC}"
+echo -e "${YELLOW} You may not see any output for a few minutes.${NC}"
 echo -e "${BOLD}${YELLOW}-----------------------------------------------------------------${NC}\n"
 
 cd "${SCRIPT_DIR}/firmware"
 
 # Compile using all available CPU cores (--jobs 0) to speed up build time
 arduino-cli compile --fqbn arduino:zephyr:unoq --jobs 0 -u .
+
+# 5. Tailscale installation & activation
+echo -e "\n${BOLD}[5/5] Setting up Tailscale VPN...${NC}"
+if ! command -v tailscale &> /dev/null; then
+    echo "Installing Tailscale via official installation script..."
+    curl -fsSL https://tailscale.com/install.sh | sh
+else
+    echo -e "${GREEN}✓ Tailscale is already installed.${NC}"
+fi
+
+echo "Enabling and starting Tailscale service..."
+sudo systemctl enable --now tailscaled
+
+echo -e "\n${BOLD}${YELLOW}-----------------------------------------------------------------${NC}"
+echo -e "${YELLOW} Activating Tailscale...${NC}"
+echo -e "${YELLOW} If prompted, follow the login URL in your browser to link the device.${NC}"
+echo -e "${BOLD}${YELLOW}-----------------------------------------------------------------${NC}\n"
+sudo tailscale up || true
 
 echo -e "\n${BOLD}${GREEN}==========================================================${NC}"
 echo -e "${BOLD}${GREEN}   Installation finished successfully!                    ${NC}"

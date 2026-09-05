@@ -11,16 +11,17 @@ sys.modules['pyaudio'] = MagicMock()
 
 import cv2
 import numpy as np
-from flask import Flask, render_template_string, Response, request, jsonify
+from flask import Flask, render_template, Response, request, jsonify
 from rapidocr_onnxruntime import RapidOCR
 from edge_impulse_linux.image import ImageImpulseRunner
 
-app = Flask(__name__)
-
 # Absolute paths resolution
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+TEMPLATES_DIR = os.path.join(SCRIPT_DIR, "templates")
 MODEL_FILE = os.path.join(SCRIPT_DIR, "model.eim")
 ROUTER_SOCKET = "/var/run/arduino-router.sock"
+
+app = Flask(__name__, template_folder=TEMPLATES_DIR)
 
 # Detection parameters
 CONFIDENCE_THRESHOLD = 0.50
@@ -41,6 +42,17 @@ latest_status = "Waiting for stable object at 20-40 cm..."
 latest_result = "-"
 latest_process_time = 0.0
 
+detection_counter = 0
+latest_detection = {
+    "id": 0,
+    "type": "none",
+    "label": "",
+    "score": 0.0,
+    "text": "",
+    "spoken_text": "",
+    "timestamp": 0.0
+}
+
 # Initialize RapidOCR
 ocr_engine = RapidOCR()
 
@@ -59,50 +71,6 @@ if os.path.isfile(MODEL_FILE):
 else:
     print(f"[WARN] Model file not found at: {MODEL_FILE}. Fallback OCR will run exclusively.")
 
-# HTML Dashboard Template
-HTML_TEMPLATE = """
-<!DOCTYPE html>
-<html>
-<head>
-    <title>UNO Q Pantry Assistant</title>
-    <meta charset="utf-8">
-    <style>
-        body { font-family: sans-serif; text-align: center; margin-top: 20px; background-color: #f4f4f4; }
-        .container { background: white; padding: 20px; display: inline-block; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        img { border: 2px solid #333; border-radius: 5px; max-width: 100%; }
-        .card { margin-top: 15px; text-align: left; background: #eee; padding: 15px; border-radius: 5px; }
-        .highlight { font-size: 1.2em; font-weight: bold; color: #0056b3; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h2>UNO Q - Automated Pantry Assistant</h2>
-        <img id="videofeed" src="/videofeed" width="854" height="480"><br><br>
-
-        <div class="card">
-            <p><strong>Distance Sensor:</strong> <span id="dist-span">--</span> mm</p>
-            <p><strong>Status:</strong> <span id="status-span">Scanning...</span></p>
-            <p><strong>Result:</strong> <span id="res-span" class="highlight">-</span></p>
-            <p><strong>Processing Time:</strong> <span id="time-span">0.000</span> s</p>
-        </div>
-    </div>
-
-    <script>
-        setInterval(() => {
-            fetch('/telemetry')
-                .then(r => r.json())
-                .then(data => {
-                    document.getElementById('dist-span').innerText = data.distance;
-                    document.getElementById('status-span').innerText = data.status;
-                    document.getElementById('res-span').innerText = data.result;
-                    document.getElementById('time-span').innerText = data.time.toFixed(3);
-                })
-                .catch(err => console.error(err));
-        }, 300);
-    </script>
-</body>
-</html>
-"""
 
 def read_modulino_distance():
     """Reads real-time distance from STM32 through the arduino-router UNIX socket."""
@@ -186,6 +154,7 @@ def run_ocr_inference(frame_bgr):
 def automation_worker():
     """Monitors stability between 200mm and 400mm and runs the detection pipeline."""
     global latest_distance, latest_status, latest_result, latest_process_time
+    global detection_counter, latest_detection
     history = []
 
     while True:
@@ -222,14 +191,35 @@ def automation_worker():
                 label, score = run_model_inference(frame_to_process)
 
                 if label and score >= CONFIDENCE_THRESHOLD:
+                    detection_counter += 1
                     latest_result = f"Model: {label} ({score:.2f})"
+                    latest_detection = {
+                        "id": detection_counter,
+                        "type": "model",
+                        "label": label,
+                        "score": float(score),
+                        "text": latest_result,
+                        "spoken_text": f"Detectado: {label}",
+                        "timestamp": time.time()
+                    }
                     print(f"[DETECTION] {latest_result} at {dist} mm")
                 else:
                     # Step 2: Fallback to RapidOCR
                     score_str = f"{score:.2f}" if label else "0.00"
                     latest_status = f"Confidence low ({score_str}). Running OCR..."
                     ocr_text = run_ocr_inference(frame_to_process)
+                    detection_counter += 1
                     latest_result = f"OCR Fallback: {ocr_text}"
+                    spoken_msg = f"Texto detectado: {ocr_text}" if ocr_text != "No text identified" else "No se identificó texto legible"
+                    latest_detection = {
+                        "id": detection_counter,
+                        "type": "ocr",
+                        "label": ocr_text,
+                        "score": 0.0,
+                        "text": latest_result,
+                        "spoken_text": spoken_msg,
+                        "timestamp": time.time()
+                    }
                     print(f"[FALLBACK] {latest_result} at {dist} mm")
 
                 latest_process_time = time.time() - t0
@@ -257,7 +247,7 @@ def get_video_stream():
 
 @app.route('/')
 def index():
-    return render_template_string(HTML_TEMPLATE)
+    return render_template("index.html")
 
 @app.route('/videofeed')
 def videofeed():
@@ -269,8 +259,39 @@ def telemetry():
         "distance": latest_distance,
         "status": latest_status,
         "result": latest_result,
-        "time": latest_process_time
+        "time": latest_process_time,
+        "detection": latest_detection
     })
+
+@app.route('/api/test_detection', methods=['GET', 'POST'])
+def test_detection():
+    """Helper route to trigger synthetic detections for testing and demonstrations."""
+    global detection_counter, latest_detection, latest_result
+    label = request.args.get('label', 'Garbanzos Cocidos')
+    det_type = request.args.get('type', 'model')
+    try:
+        score = float(request.args.get('score', 0.95))
+    except (ValueError, TypeError):
+        score = 0.95
+
+    detection_counter += 1
+    if det_type == 'model':
+        latest_result = f"Model: {label} ({score:.2f})"
+        spoken = f"Detectado: {label}"
+    else:
+        latest_result = f"OCR Fallback: {label}"
+        spoken = f"Texto detectado: {label}"
+
+    latest_detection = {
+        "id": detection_counter,
+        "type": det_type,
+        "label": label,
+        "score": score,
+        "text": latest_result,
+        "spoken_text": spoken,
+        "timestamp": time.time()
+    }
+    return jsonify({"status": "ok", "detection": latest_detection})
 
 if __name__ == '__main__':
     threading.Thread(target=camera_reader_thread, daemon=True).start()
