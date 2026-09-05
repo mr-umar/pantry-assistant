@@ -1,0 +1,5 @@
+flask
+edge_impulse_linux
+rapidocr_onnxruntime
+msgpack
+numpy
