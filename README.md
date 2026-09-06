@@ -123,6 +123,13 @@ chmod +x src/model.eim run.sh
 ./run.sh
 ```
 
+### 5. (Optional) Remote Access with Tailscale
+To connect to the assistant from any device outside the local network:
+```bash
+curl -fsSL https://tailscale.com/install.sh | sh
+sudo tailscale up
+```
+
 ---
 
 ## License

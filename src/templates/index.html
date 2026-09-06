@@ -950,7 +950,7 @@
             if (window.speechSynthesis && window.speechSynthesis.onvoiceschanged !== undefined) {
                 window.speechSynthesis.onvoiceschanged = loadVoices;
             }
-            setInterval(poll, 250);
+            setInterval(poll, 100);
         });
     </script>
 </body>

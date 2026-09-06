@@ -86,8 +86,7 @@ if [ "$INSTALL_TAILSCALE" = true ]; then
     echo -e "\n${BOLD}${YELLOW}-----------------------------------------------------------------${NC}"
     echo -e "${YELLOW} Activating Tailscale...${NC}"
     echo -e "${YELLOW} If prompted, follow the login URL in your browser to link the device.${NC}"
-    echo -e "${BOLD}${YELLOW}-----------------------------------------------------------------${NC}\n"
-    sudo tailscale up || true
+    sudo tailscale up
 else
     echo -e "\n${BOLD}[5/5] Skipping Tailscale installation (not selected).${NC}"
 fi
