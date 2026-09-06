@@ -31,6 +31,11 @@ STABLE_SAMPLES = 3
 STABLE_TOLERANCE_MM = 30
 DETECTION_COOLDOWN_SEC = 2.0
 
+# Video streaming parameters (low-res MJPEG stream to conserve CPU and bandwidth)
+STREAM_WIDTH = 320
+STREAM_HEIGHT = 180
+STREAM_JPEG_QUALITY = 45
+
 # Global state variables
 camera_index = 0
 cap = None
@@ -301,10 +306,10 @@ def automation_worker():
 
 def get_video_stream():
     global current_frame_1080
-    placeholder_frame = np.zeros((480, 854, 3), dtype=np.uint8)
-    cv2.putText(placeholder_frame, "Camera offline - select device below", (140, 240),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (200, 200, 200), 2, cv2.LINE_AA)
-    ret, placeholder_jpeg = cv2.imencode('.jpg', placeholder_frame, [cv2.IMWRITE_JPEG_QUALITY, 60])
+    placeholder_frame = np.zeros((STREAM_HEIGHT, STREAM_WIDTH, 3), dtype=np.uint8)
+    cv2.putText(placeholder_frame, "Camera offline", (int(STREAM_WIDTH * 0.18), int(STREAM_HEIGHT * 0.55)),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (200, 200, 200), 1, cv2.LINE_AA)
+    ret, placeholder_jpeg = cv2.imencode('.jpg', placeholder_frame, [cv2.IMWRITE_JPEG_QUALITY, STREAM_JPEG_QUALITY])
     placeholder_bytes = placeholder_jpeg.tobytes()
 
     while True:
@@ -317,10 +322,11 @@ def get_video_stream():
             time.sleep(0.25)
             continue
 
-        frame_preview = cv2.resize(frame, (854, 480))
-        ret, buffer = cv2.imencode('.jpg', frame_preview, [cv2.IMWRITE_JPEG_QUALITY, 60])
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
+        frame_preview = cv2.resize(frame, (STREAM_WIDTH, STREAM_HEIGHT), interpolation=cv2.INTER_AREA)
+        ret, buffer = cv2.imencode('.jpg', frame_preview, [cv2.IMWRITE_JPEG_QUALITY, STREAM_JPEG_QUALITY])
+        if ret:
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
         time.sleep(0.05)
 
 @app.route('/')
