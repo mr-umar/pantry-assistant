@@ -10,7 +10,21 @@ NC='\033[0m' # No Color
 
 echo -e "${BOLD}${CYAN}==========================================================${NC}"
 echo -e "${BOLD}${CYAN}   Installing Pantry Assistant (Arduino UNO Q Dedicated)   ${NC}"
-echo -e "${BOLD}${CYAN}==========================================================${NC}"
+echo -e "${BOLD}${CYAN}==========================================================${NC}\n"
+
+# Optional Tailscale prompt
+INSTALL_TAILSCALE=false
+read -r -p "Do you want to install and activate Tailscale for remote access? [y/N]: " ts_response
+case "$ts_response" in
+    [yY][eE][sS]|[yY])
+        INSTALL_TAILSCALE=true
+        echo -e "${GREEN}✓ Tailscale will be installed in step [5/5].${NC}\n"
+        ;;
+    *)
+        INSTALL_TAILSCALE=false
+        echo -e "${YELLOW}Tailscale installation skipped.${NC}\n"
+        ;;
+esac
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -56,23 +70,27 @@ cd "${SCRIPT_DIR}/firmware"
 # Compile using all available CPU cores (--jobs 0) to speed up build time
 arduino-cli compile --fqbn arduino:zephyr:unoq --jobs 0 -u .
 
-# 5. Tailscale installation & activation
-echo -e "\n${BOLD}[5/5] Setting up Tailscale VPN...${NC}"
-if ! command -v tailscale &> /dev/null; then
-    echo "Installing Tailscale via official installation script..."
-    curl -fsSL https://tailscale.com/install.sh | sh
+# 5. Tailscale installation & activation (Optional)
+if [ "$INSTALL_TAILSCALE" = true ]; then
+    echo -e "\n${BOLD}[5/5] Setting up Tailscale VPN...${NC}"
+    if ! command -v tailscale &> /dev/null; then
+        echo "Installing Tailscale via official installation script..."
+        curl -fsSL https://tailscale.com/install.sh | sh
+    else
+        echo -e "${GREEN}✓ Tailscale is already installed.${NC}"
+    fi
+
+    echo "Enabling and starting Tailscale service..."
+    sudo systemctl enable --now tailscaled
+
+    echo -e "\n${BOLD}${YELLOW}-----------------------------------------------------------------${NC}"
+    echo -e "${YELLOW} Activating Tailscale...${NC}"
+    echo -e "${YELLOW} If prompted, follow the login URL in your browser to link the device.${NC}"
+    echo -e "${BOLD}${YELLOW}-----------------------------------------------------------------${NC}\n"
+    sudo tailscale up || true
 else
-    echo -e "${GREEN}✓ Tailscale is already installed.${NC}"
+    echo -e "\n${BOLD}[5/5] Skipping Tailscale installation (not selected).${NC}"
 fi
-
-echo "Enabling and starting Tailscale service..."
-sudo systemctl enable --now tailscaled
-
-echo -e "\n${BOLD}${YELLOW}-----------------------------------------------------------------${NC}"
-echo -e "${YELLOW} Activating Tailscale...${NC}"
-echo -e "${YELLOW} If prompted, follow the login URL in your browser to link the device.${NC}"
-echo -e "${BOLD}${YELLOW}-----------------------------------------------------------------${NC}\n"
-sudo tailscale up || true
 
 echo -e "\n${BOLD}${GREEN}==========================================================${NC}"
 echo -e "${BOLD}${GREEN}   Installation finished successfully!                    ${NC}"
