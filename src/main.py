@@ -199,18 +199,17 @@ def automation_worker():
                         "label": label,
                         "score": float(score),
                         "text": latest_result,
-                        "spoken_text": f"Detectado: {label}",
+                        "spoken_text": f"Detected: {label}",
                         "timestamp": time.time()
                     }
                     print(f"[DETECTION] {latest_result} at {dist} mm")
                 else:
-                    # Step 2: Fallback to RapidOCR
                     score_str = f"{score:.2f}" if label else "0.00"
                     latest_status = f"Confidence low ({score_str}). Running OCR..."
                     ocr_text = run_ocr_inference(frame_to_process)
                     detection_counter += 1
                     latest_result = f"OCR Fallback: {ocr_text}"
-                    spoken_msg = f"Texto detectado: {ocr_text}" if ocr_text != "No text identified" else "No se identificó texto legible"
+                    spoken_msg = f"Text detected: {ocr_text}" if ocr_text != "No text identified" else "No legible text identified"
                     latest_detection = {
                         "id": detection_counter,
                         "type": "ocr",
@@ -229,7 +228,6 @@ def automation_worker():
         time.sleep(0.1)
 
 def get_video_stream():
-    """Generates JPEG stream for the web browser."""
     global current_frame_1080
     while True:
         with frame_lock:
@@ -265,9 +263,8 @@ def telemetry():
 
 @app.route('/api/test_detection', methods=['GET', 'POST'])
 def test_detection():
-    """Helper route to trigger synthetic detections for testing and demonstrations."""
     global detection_counter, latest_detection, latest_result
-    label = request.args.get('label', 'Garbanzos Cocidos')
+    label = request.args.get('label', 'Canned Chickpeas')
     det_type = request.args.get('type', 'model')
     try:
         score = float(request.args.get('score', 0.95))
@@ -277,10 +274,10 @@ def test_detection():
     detection_counter += 1
     if det_type == 'model':
         latest_result = f"Model: {label} ({score:.2f})"
-        spoken = f"Detectado: {label}"
+        spoken = f"Detected: {label}"
     else:
         latest_result = f"OCR Fallback: {label}"
-        spoken = f"Texto detectado: {label}"
+        spoken = f"Text detected: {label}"
 
     latest_detection = {
         "id": detection_counter,
