@@ -495,6 +495,11 @@
                     <div id="target-box" class="target-box" aria-hidden="true"></div>
                 </div>
 
+                <div class="form-item">
+                    <label for="camera-select">Video Input Device</label>
+                    <select id="camera-select" aria-label="Select Video Camera Device"></select>
+                </div>
+
                 <div class="telemetry-group">
                     <div class="telemetry-header">
                         <span class="telemetry-label">ToF Distance Sensor</span>
@@ -612,10 +617,52 @@
         const simModelBtn = document.getElementById('btn-sim-model');
         const simOcrBtn = document.getElementById('btn-sim-ocr');
 
+        const cameraSelect = document.getElementById('camera-select');
+        let currentCameraIndex = 0;
+
         const systemStatus = document.getElementById('system-status');
         const distanceReadout = document.getElementById('distance-readout');
         const rangeMarker = document.getElementById('range-marker');
         const targetBox = document.getElementById('target-box');
+
+        function loadCameras() {
+            fetch('/api/cameras')
+                .then(res => res.json())
+                .then(data => {
+                    cameraSelect.innerHTML = '';
+                    currentCameraIndex = data.current_index;
+                    if (data.cameras && data.cameras.length) {
+                        data.cameras.forEach(cam => {
+                            const opt = document.createElement('option');
+                            opt.value = cam.index;
+                            opt.textContent = cam.name;
+                            if (cam.index === data.current_index) {
+                                opt.selected = true;
+                            }
+                            cameraSelect.appendChild(opt);
+                        });
+                    } else {
+                        const opt = document.createElement('option');
+                        opt.value = 0;
+                        opt.textContent = 'Default Camera (/dev/video0)';
+                        cameraSelect.appendChild(opt);
+                    }
+                })
+                .catch(() => {});
+        }
+
+        cameraSelect.addEventListener('change', () => {
+            const selectedIdx = parseInt(cameraSelect.value, 10);
+            systemStatus.textContent = 'Switching Camera...';
+            fetch(`/api/camera?index=${selectedIdx}`, { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    currentCameraIndex = data.current_index;
+                    const streamImg = document.getElementById('camera-stream');
+                    streamImg.src = '/videofeed?t=' + Date.now();
+                })
+                .catch(() => {});
+        });
 
         const resultBadge = document.getElementById('result-badge');
         const resultTimestamp = document.getElementById('result-timestamp');
@@ -789,6 +836,24 @@
                 resultTime.textContent = `${data.time.toFixed(3)} s`;
             }
 
+            if (typeof data.camera_opened === 'boolean') {
+                if (!data.camera_opened) {
+                    systemStatus.textContent = 'Camera Offline (Select Device)';
+                    systemStatus.style.borderColor = 'var(--accent-danger)';
+                    systemStatus.style.color = 'var(--accent-danger)';
+                } else {
+                    systemStatus.style.borderColor = 'var(--border-default)';
+                    systemStatus.style.color = 'var(--text-secondary)';
+                }
+            }
+
+            if (typeof data.camera_index === 'number' && data.camera_index !== currentCameraIndex) {
+                currentCameraIndex = data.camera_index;
+                if (cameraSelect.value !== String(currentCameraIndex)) {
+                    cameraSelect.value = String(currentCameraIndex);
+                }
+            }
+
             if (data.detection && data.detection.id && data.detection.id !== lastHandledId) {
                 lastHandledId = data.detection.id;
                 const d = data.detection;
@@ -861,6 +926,7 @@
         });
 
         window.addEventListener('DOMContentLoaded', () => {
+            loadCameras();
             loadVoices();
             if (window.speechSynthesis && window.speechSynthesis.onvoiceschanged !== undefined) {
                 window.speechSynthesis.onvoiceschanged = loadVoices;

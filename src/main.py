@@ -92,16 +92,88 @@ def read_modulino_distance():
     except Exception:
         return -1
 
+def get_available_cameras():
+    cameras = []
+    v4l_path = "/sys/class/video4linux"
+    if os.path.isdir(v4l_path):
+        for entry in sorted(os.listdir(v4l_path)):
+            if entry.startswith("video"):
+                idx_str = entry[5:]
+                if idx_str.isdigit():
+                    idx = int(idx_str)
+                    name_file = os.path.join(v4l_path, entry, "name")
+                    name = f"Camera {idx} (/dev/{entry})"
+                    if os.path.isfile(name_file):
+                        try:
+                            with open(name_file, "r") as f:
+                                dev_name = f.read().strip()
+                                if dev_name:
+                                    name = f"{dev_name} (/dev/{entry})"
+                        except Exception:
+                            pass
+                    cameras.append({"index": idx, "name": name, "device": f"/dev/{entry}"})
+    if not cameras:
+        for i in range(6):
+            cameras.append({"index": i, "name": f"Camera {i} (/dev/video{i})", "device": f"/dev/video{i}"})
+    return cameras
+
 def camera_reader_thread():
-    """Continuously reads frames from the USB camera to keep buffer fresh."""
     global cap, camera_index, current_frame_1080
+    consecutive_failures = 0
     while True:
+        target_index = camera_index
         if cap is None or not cap.isOpened():
-            cap = cv2.VideoCapture(camera_index)
-            cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-            cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
-            cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-            time.sleep(1)
+            print(f"[CAMERA] Attempting to open camera index {target_index}...")
+            test_cap = cv2.VideoCapture(target_index)
+            if test_cap.isOpened():
+                ret, _ = test_cap.read()
+                if ret:
+                    test_cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+                    test_cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+                    test_cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+                    with frame_lock:
+                        cap = test_cap
+                    consecutive_failures = 0
+                    print(f"[CAMERA] Successfully opened camera index {target_index}")
+                else:
+                    test_cap.release()
+                    consecutive_failures += 1
+                    time.sleep(1.5)
+            else:
+                test_cap.release()
+                consecutive_failures += 1
+                time.sleep(1.5)
+
+            if consecutive_failures >= 3:
+                cams = get_available_cameras()
+                for c in cams:
+                    idx = c["index"]
+                    if idx != target_index:
+                        print(f"[CAMERA] Probing alternate camera index {idx} ({c['name']})...")
+                        probe_cap = cv2.VideoCapture(idx)
+                        if probe_cap.isOpened():
+                            ret, _ = probe_cap.read()
+                            if ret:
+                                probe_cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+                                probe_cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+                                probe_cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+                                with frame_lock:
+                                    camera_index = idx
+                                    cap = probe_cap
+                                print(f"[CAMERA] Switched to working camera index {idx}")
+                                consecutive_failures = 0
+                                break
+                            probe_cap.release()
+                        else:
+                            probe_cap.release()
+                consecutive_failures = 0
+            continue
+
+        if camera_index != target_index:
+            with frame_lock:
+                if cap is not None:
+                    cap.release()
+                    cap = None
             continue
 
         success, frame = cap.read()
@@ -109,7 +181,7 @@ def camera_reader_thread():
             with frame_lock:
                 current_frame_1080 = frame
         else:
-            time.sleep(0.01)
+            time.sleep(0.02)
 
 def run_model_inference(frame_bgr):
     """Matches the exact inference logic for FOMO and Classification."""
@@ -229,12 +301,20 @@ def automation_worker():
 
 def get_video_stream():
     global current_frame_1080
+    placeholder_frame = np.zeros((480, 854, 3), dtype=np.uint8)
+    cv2.putText(placeholder_frame, "Camera offline - select device below", (140, 240),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (200, 200, 200), 2, cv2.LINE_AA)
+    ret, placeholder_jpeg = cv2.imencode('.jpg', placeholder_frame, [cv2.IMWRITE_JPEG_QUALITY, 60])
+    placeholder_bytes = placeholder_jpeg.tobytes()
+
     while True:
         with frame_lock:
             frame = None if current_frame_1080 is None else current_frame_1080.copy()
 
         if frame is None:
-            time.sleep(0.1)
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + placeholder_bytes + b'\r\n')
+            time.sleep(0.25)
             continue
 
         frame_preview = cv2.resize(frame, (854, 480))
@@ -258,7 +338,45 @@ def telemetry():
         "status": latest_status,
         "result": latest_result,
         "time": latest_process_time,
-        "detection": latest_detection
+        "detection": latest_detection,
+        "camera_index": camera_index,
+        "camera_opened": bool(cap and cap.isOpened())
+    })
+
+@app.route('/api/cameras', methods=['GET'])
+def list_cameras():
+    return jsonify({
+        "current_index": camera_index,
+        "is_opened": bool(cap and cap.isOpened()),
+        "cameras": get_available_cameras()
+    })
+
+@app.route('/api/camera', methods=['GET', 'POST'])
+def select_camera():
+    global camera_index, cap, current_frame_1080
+    new_idx = request.args.get('index')
+    if new_idx is None and request.is_json:
+        new_idx = request.json.get('index')
+    if new_idx is not None:
+        try:
+            target_idx = int(new_idx)
+            with frame_lock:
+                if cap is not None:
+                    cap.release()
+                    cap = None
+                camera_index = target_idx
+                current_frame_1080 = None
+            print(f"[CAMERA] Switched to index {camera_index} via API")
+            return jsonify({
+                "status": "ok",
+                "current_index": camera_index
+            })
+        except ValueError:
+            return jsonify({"status": "error", "message": "Invalid camera index"}), 400
+
+    return jsonify({
+        "current_index": camera_index,
+        "is_opened": bool(cap and cap.isOpened())
     })
 
 @app.route('/api/test_detection', methods=['GET', 'POST'])
