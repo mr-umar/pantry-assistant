@@ -228,6 +228,53 @@ def run_ocr_inference(frame_bgr):
         return " ".join(extracted)
     return "No text identified"
 
+def process_frame_detection(frame_to_process, dist=-1):
+    """Executes Edge Impulse model or RapidOCR fallback on the frame and updates system state."""
+    global detection_counter, latest_detection, latest_result, latest_process_time, latest_status
+    if frame_to_process is None:
+        return None
+
+    t0 = time.time()
+    # Step 1: Run Edge Impulse model
+    label, score = run_model_inference(frame_to_process)
+
+    if label and score >= CONFIDENCE_THRESHOLD:
+        detection_counter += 1
+        latest_result = f"Model: {label} ({score:.2f})"
+        latest_detection = {
+            "id": detection_counter,
+            "type": "model",
+            "label": label,
+            "score": float(score),
+            "text": latest_result,
+            "spoken_text": f"Detectado: {label}",
+            "timestamp": time.time()
+        }
+        dist_info = f" at {dist} mm" if dist > 0 else ""
+        print(f"[DETECTION] {latest_result}{dist_info}")
+    else:
+        score_str = f"{score:.2f}" if label else "0.00"
+        latest_status = f"Confidence low ({score_str}). Running OCR..."
+        ocr_text = run_ocr_inference(frame_to_process)
+        detection_counter += 1
+        latest_result = f"OCR Fallback: {ocr_text}"
+        spoken_msg = f"Texto detectado: {ocr_text}" if ocr_text != "No text identified" else "No se ha detectado texto legible"
+        latest_detection = {
+            "id": detection_counter,
+            "type": "ocr",
+            "label": ocr_text,
+            "score": 0.0,
+            "text": latest_result,
+            "spoken_text": spoken_msg,
+            "timestamp": time.time()
+        }
+        dist_info = f" at {dist} mm" if dist > 0 else ""
+        print(f"[FALLBACK] {latest_result}{dist_info}")
+
+    latest_process_time = time.time() - t0
+    latest_status = f"Identificado: {latest_detection['label']}"
+    return latest_detection
+
 def automation_worker():
     """Monitors stability between 250mm and 500mm and runs the detection pipeline."""
     global latest_distance, latest_status, latest_result, latest_process_time
@@ -262,43 +309,7 @@ def automation_worker():
 
             if frame_to_process is not None:
                 latest_status = f"Object stable at {dist} mm. Evaluating..."
-                t0 = time.time()
-
-                # Step 1: Run Edge Impulse model
-                label, score = run_model_inference(frame_to_process)
-
-                if label and score >= CONFIDENCE_THRESHOLD:
-                    detection_counter += 1
-                    latest_result = f"Model: {label} ({score:.2f})"
-                    latest_detection = {
-                        "id": detection_counter,
-                        "type": "model",
-                        "label": label,
-                        "score": float(score),
-                        "text": latest_result,
-                        "spoken_text": f"Detected: {label}",
-                        "timestamp": time.time()
-                    }
-                    print(f"[DETECTION] {latest_result} at {dist} mm")
-                else:
-                    score_str = f"{score:.2f}" if label else "0.00"
-                    latest_status = f"Confidence low ({score_str}). Running OCR..."
-                    ocr_text = run_ocr_inference(frame_to_process)
-                    detection_counter += 1
-                    latest_result = f"OCR Fallback: {ocr_text}"
-                    spoken_msg = f"Text detected: {ocr_text}" if ocr_text != "No text identified" else "No legible text identified"
-                    latest_detection = {
-                        "id": detection_counter,
-                        "type": "ocr",
-                        "label": ocr_text,
-                        "score": 0.0,
-                        "text": latest_result,
-                        "spoken_text": spoken_msg,
-                        "timestamp": time.time()
-                    }
-                    print(f"[FALLBACK] {latest_result} at {dist} mm")
-
-                latest_process_time = time.time() - t0
+                process_frame_detection(frame_to_process, dist=dist)
                 history.clear()
                 time.sleep(DETECTION_COOLDOWN_SEC)
 
@@ -383,6 +394,22 @@ def select_camera():
     return jsonify({
         "current_index": camera_index,
         "is_opened": bool(cap and cap.isOpened())
+    })
+
+@app.route('/api/force_detection', methods=['GET', 'POST'])
+def force_detection():
+    with frame_lock:
+        frame_to_process = None if current_frame_1080 is None else current_frame_1080.copy()
+
+    if frame_to_process is None:
+        return jsonify({"status": "error", "message": "No frame available from camera"}), 400
+
+    detection = process_frame_detection(frame_to_process, dist=latest_distance)
+    return jsonify({
+        "status": "ok",
+        "detection": detection,
+        "time": latest_process_time,
+        "distance": latest_distance
     })
 
 @app.route('/api/test_detection', methods=['GET', 'POST'])
