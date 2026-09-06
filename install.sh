@@ -14,7 +14,7 @@ echo -e "${BOLD}${CYAN}=========================================================
 
 # Optional Tailscale prompt
 INSTALL_TAILSCALE=false
-read -r -p "Do you want to install and activate Tailscale for remote access? [y/N]: " ts_response
+read -r -p "Do you want to install Tailscale for remote access? [y/N]: " ts_response
 case "$ts_response" in
     [yY][eE][sS]|[yY])
         INSTALL_TAILSCALE=true
@@ -70,7 +70,7 @@ cd "${SCRIPT_DIR}/firmware"
 # Compile using all available CPU cores (--jobs 0) to speed up build time
 arduino-cli compile --fqbn arduino:zephyr:unoq --jobs 0 -u .
 
-# 5. Tailscale installation & activation (Optional)
+# 5. Tailscale installation (Optional)
 if [ "$INSTALL_TAILSCALE" = true ]; then
     echo -e "\n${BOLD}[5/5] Setting up Tailscale VPN...${NC}"
     if ! command -v tailscale &> /dev/null; then
@@ -82,11 +82,6 @@ if [ "$INSTALL_TAILSCALE" = true ]; then
 
     echo "Enabling and starting Tailscale service..."
     sudo systemctl enable --now tailscaled
-
-    echo -e "\n${BOLD}${YELLOW}-----------------------------------------------------------------${NC}"
-    echo -e "${YELLOW} Activating Tailscale...${NC}"
-    echo -e "${YELLOW} If prompted, follow the login URL in your browser to link the device.${NC}"
-    sudo tailscale up
 else
     echo -e "\n${BOLD}[5/5] Skipping Tailscale installation (not selected).${NC}"
 fi
@@ -94,4 +89,9 @@ fi
 echo -e "\n${BOLD}${GREEN}==========================================================${NC}"
 echo -e "${BOLD}${GREEN}   Installation finished successfully!                    ${NC}"
 echo -e "${BOLD}${GREEN}   Launch the assistant with: ./run.sh                    ${NC}"
+if command -v tailscale &> /dev/null; then
+    echo -e "\n${BOLD}${CYAN}   [Tailscale Remote Access]${NC}"
+    echo -e "   You can activate Tailscale anytime with:"
+    echo -e "   ${BOLD}sudo tailscale up${NC}"
+fi
 echo -e "${BOLD}${GREEN}==========================================================${NC}\n"

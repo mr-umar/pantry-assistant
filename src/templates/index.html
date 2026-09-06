@@ -512,7 +512,8 @@
             <section class="card" aria-labelledby="heading-camera">
                 <div class="card-title-row">
                     <h2 id="heading-camera"><i class="fa-solid fa-video" aria-hidden="true"></i> Camera Feed</h2>
-                    <span id="system-status" class="live-indicator"><i class="fa-solid fa-circle-dot" aria-hidden="true"></i> Standby</span>
+                    <span id="system-status" class="live-indicator"><i class="fa-solid fa-circle-dot"
+                            aria-hidden="true"></i> Standby</span>
                 </div>
 
                 <div class="video-container">
@@ -521,13 +522,15 @@
                 </div>
 
                 <div class="form-item">
-                    <label for="camera-select"><i class="fa-solid fa-camera" aria-hidden="true"></i> Video Input Device</label>
+                    <label for="camera-select"><i class="fa-solid fa-camera" aria-hidden="true"></i> Video Input
+                        Device</label>
                     <select id="camera-select" aria-label="Select Video Camera Device"></select>
                 </div>
 
                 <div class="telemetry-group">
                     <div class="telemetry-header">
-                        <span class="telemetry-label"><i class="fa-solid fa-ruler-horizontal" aria-hidden="true"></i> ToF Distance Sensor</span>
+                        <span class="telemetry-label"><i class="fa-solid fa-ruler-horizontal" aria-hidden="true"></i>
+                            ToF Distance Sensor</span>
                         <span class="telemetry-value"><span id="distance-readout">--</span> mm</span>
                     </div>
 
@@ -538,7 +541,7 @@
 
                     <div class="range-legend" aria-hidden="true">
                         <span>0 mm</span>
-                        <span>Optimal: 200 mm - 400 mm</span>
+                        <span>Optimal: 250 mm - 450 mm</span>
                         <span>600 mm+</span>
                     </div>
                 </div>
@@ -547,7 +550,8 @@
             <div style="display: flex; flex-direction: column; gap: var(--space-4);">
                 <section class="card" aria-labelledby="heading-detection">
                     <div class="card-title-row">
-                        <h2 id="heading-detection"><i class="fa-solid fa-eye" aria-hidden="true"></i> Latest Recognition</h2>
+                        <h2 id="heading-detection"><i class="fa-solid fa-eye" aria-hidden="true"></i> Latest Recognition
+                        </h2>
                         <button id="btn-repeat" type="button" class="btn btn-secondary">
                             <i class="fa-solid fa-rotate-right" aria-hidden="true"></i> Repeat Audio
                         </button>
@@ -555,12 +559,14 @@
 
                     <div class="result-panel">
                         <div class="result-meta">
-                            <span id="result-badge" class="badge"><i class="fa-regular fa-clock" aria-hidden="true"></i> Awaiting Item</span>
+                            <span id="result-badge" class="badge"><i class="fa-regular fa-clock" aria-hidden="true"></i>
+                                Awaiting Item</span>
                             <span id="result-timestamp" class="history-sub">--:--:--</span>
                         </div>
                         <div id="result-value" class="result-text">Place an item 20 to 40 cm in front of camera</div>
                         <div class="result-info">
-                            <span id="result-detail"><i class="fa-solid fa-microchip" aria-hidden="true"></i> Inference Pipeline: Edge Impulse / RapidOCR</span>
+                            <span id="result-detail"><i class="fa-solid fa-microchip" aria-hidden="true"></i> Inference
+                                Pipeline: Edge Impulse / RapidOCR</span>
                             <span id="result-time" class="history-sub">0.000 s</span>
                         </div>
                     </div>
@@ -580,23 +586,28 @@
 
                 <section class="card" aria-labelledby="heading-speech">
                     <div class="card-title-row">
-                        <h2 id="heading-speech"><i class="fa-solid fa-sliders" aria-hidden="true"></i> Voice Configuration</h2>
-                        <span id="audio-state-text" class="live-indicator"><i class="fa-solid fa-volume-xmark" aria-hidden="true"></i> Audio Muted</span>
+                        <h2 id="heading-speech"><i class="fa-solid fa-sliders" aria-hidden="true"></i> Voice
+                            Configuration</h2>
+                        <span id="audio-state-text" class="live-indicator"><i class="fa-solid fa-volume-xmark"
+                                aria-hidden="true"></i> Audio Muted</span>
                     </div>
 
                     <div class="form-grid">
                         <div class="form-item form-item-full">
-                            <label for="voice-select"><i class="fa-solid fa-microphone-lines" aria-hidden="true"></i> System Speech Voice</label>
+                            <label for="voice-select"><i class="fa-solid fa-microphone-lines" aria-hidden="true"></i>
+                                System Speech Voice</label>
                             <select id="voice-select"></select>
                         </div>
 
                         <div class="form-item">
-                            <label for="speech-rate"><i class="fa-solid fa-gauge-high" aria-hidden="true"></i> Speech Rate: <span id="rate-display">1.0x</span></label>
+                            <label for="speech-rate"><i class="fa-solid fa-gauge-high" aria-hidden="true"></i> Speech
+                                Rate: <span id="rate-display">1.0x</span></label>
                             <input type="range" id="speech-rate" min="0.6" max="1.6" step="0.1" value="1.0">
                         </div>
 
                         <div class="form-item">
-                            <label for="speech-volume"><i class="fa-solid fa-volume-low" aria-hidden="true"></i> Volume: <span id="volume-display">100%</span></label>
+                            <label for="speech-volume"><i class="fa-solid fa-volume-low" aria-hidden="true"></i> Volume:
+                                <span id="volume-display">100%</span></label>
                             <input type="range" id="speech-volume" min="0.1" max="1.0" step="0.05" value="1.0">
                         </div>
                     </div>
@@ -604,14 +615,17 @@
 
                 <section class="card" aria-labelledby="heading-history">
                     <div class="card-title-row">
-                        <h2 id="heading-history"><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i> Recognition Log</h2>
-                        <span id="history-total" class="live-indicator"><i class="fa-solid fa-list-check" aria-hidden="true"></i> 0 events</span>
+                        <h2 id="heading-history"><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i>
+                            Recognition Log</h2>
+                        <span id="history-total" class="live-indicator"><i class="fa-solid fa-list-check"
+                                aria-hidden="true"></i> 0 events</span>
                     </div>
 
                     <div id="history-container" class="history-container">
                         <div
                             style="text-align: center; color: var(--text-muted); font-size: 0.875rem; padding: var(--space-4);">
-                            <i class="fa-regular fa-clipboard" aria-hidden="true" style="margin-right: 6px;"></i> No recognition events logged yet
+                            <i class="fa-regular fa-clipboard" aria-hidden="true" style="margin-right: 6px;"></i> No
+                            recognition events logged yet
                         </div>
                     </div>
                 </section>
@@ -625,6 +639,7 @@
         let availableVoices = [];
         let selectedVoice = null;
         let lastSpokenMessage = "";
+        let lastSpokenDetection = "";
         const recognitionHistory = [];
 
         const audioToggleBtn = document.getElementById('btn-audio-toggle');
@@ -878,22 +893,37 @@
                 const d = data.detection;
                 resultTimestamp.textContent = new Date().toLocaleTimeString();
 
+                const currentText = (d.type === 'model' ? (d.label || '') : (d.label || d.text || '')).trim();
+                const isSameAsPrevious = lastSpokenDetection !== "" && (currentText.toLowerCase() === lastSpokenDetection.toLowerCase());
+
                 if (d.type === 'model') {
                     resultBadge.className = 'badge badge-model';
                     resultBadge.innerHTML = '<i class="fa-solid fa-brain" aria-hidden="true"></i> Edge Impulse Model';
                     resultValue.textContent = d.label;
                     resultDetail.textContent = `Confidence: ${Math.round((d.score || 0) * 100)}%`;
 
-                    appendHistory(d.label, 'model', `Confidence: ${(d.score || 0).toFixed(2)}`);
-                    speak(d.spoken_text || `Detected: ${d.label}`);
+                    const phrase = d.spoken_text || `Detected: ${d.label}`;
+                    lastSpokenMessage = phrase;
+
+                    if (!isSameAsPrevious) {
+                        appendHistory(d.label, 'model', `Confidence: ${(d.score || 0).toFixed(2)}`);
+                        speak(phrase);
+                        lastSpokenDetection = currentText;
+                    }
                 } else if (d.type === 'ocr') {
                     resultBadge.className = 'badge badge-ocr';
                     resultBadge.innerHTML = '<i class="fa-solid fa-font" aria-hidden="true"></i> RapidOCR Engine';
                     resultValue.textContent = d.label || d.text;
                     resultDetail.textContent = 'Fallback Text Reading';
 
-                    appendHistory(d.label || d.text, 'ocr', 'Extracted Packaging Text');
-                    speak(d.spoken_text || `Text detected: ${d.label || d.text}`);
+                    const phrase = d.spoken_text || `Text detected: ${d.label || d.text}`;
+                    lastSpokenMessage = phrase;
+
+                    if (!isSameAsPrevious) {
+                        appendHistory(d.label || d.text, 'ocr', 'Extracted Packaging Text');
+                        speak(phrase);
+                        lastSpokenDetection = currentText;
+                    }
                 }
             }
         }
