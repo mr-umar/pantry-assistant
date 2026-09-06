@@ -719,7 +719,7 @@
         function loadVoices() {
             if (!('speechSynthesis' in window)) {
                 audioToggleBtn.disabled = true;
-                audioToggleBtn.textContent = 'Síntesis de voz no disponible';
+                audioToggleBtn.textContent = 'Voice synthesis unavailable';
                 return;
             }
 
@@ -728,30 +728,30 @@
 
             voiceSelect.innerHTML = '';
 
-            // Priorizar voz en español de España (es-ES), luego cualquier español (es)
-            let spanishIndex = availableVoices.findIndex(v => {
+            // Prioritize English voice (en-US / en-GB), then any English, then system default
+            let defaultIndex = availableVoices.findIndex(v => {
                 const lang = (v.lang || '').replace('_', '-').toLowerCase();
-                return lang === 'es-es';
+                return lang === 'en-us' || lang === 'en-gb';
             });
-            if (spanishIndex === -1) {
-                spanishIndex = availableVoices.findIndex(v => (v.lang || '').toLowerCase().startsWith('es'));
+            if (defaultIndex === -1) {
+                defaultIndex = availableVoices.findIndex(v => (v.lang || '').toLowerCase().startsWith('en'));
             }
-            if (spanishIndex === -1) {
-                spanishIndex = availableVoices.findIndex(v => v.default);
+            if (defaultIndex === -1) {
+                defaultIndex = availableVoices.findIndex(v => v.default);
             }
-            if (spanishIndex === -1) {
-                spanishIndex = 0;
+            if (defaultIndex === -1) {
+                defaultIndex = 0;
             }
 
             availableVoices.forEach((voice, index) => {
                 const opt = document.createElement('option');
                 opt.value = index;
-                opt.textContent = `${voice.name} (${voice.lang})${voice.default ? ' - Por defecto' : ''}`;
+                opt.textContent = `${voice.name} (${voice.lang})${voice.default ? ' - Default' : ''}`;
                 voiceSelect.appendChild(opt);
             });
 
-            voiceSelect.selectedIndex = spanishIndex;
-            selectedVoice = availableVoices[spanishIndex];
+            voiceSelect.selectedIndex = defaultIndex;
+            selectedVoice = availableVoices[defaultIndex];
         }
 
         voiceSelect.addEventListener('change', () => {
@@ -779,7 +779,7 @@
                 audioToggleBtn.className = 'btn btn-audio-active';
                 audioToggleBtn.innerHTML = '<i class="fa-solid fa-volume-high" aria-hidden="true"></i> Browser Audio Active';
                 audioStateText.innerHTML = '<i class="fa-solid fa-volume-high" aria-hidden="true"></i> Audio Enabled';
-                speak('Asistente de despensa listo para síntesis de voz');
+                speak('Pantry assistant ready for voice announcements');
             } else {
                 audioToggleBtn.className = 'btn btn-secondary';
                 audioToggleBtn.innerHTML = '<i class="fa-solid fa-volume-xmark" aria-hidden="true"></i> Enable browser audio';
@@ -798,9 +798,9 @@
                 const utterance = new SpeechSynthesisUtterance(text);
                 if (selectedVoice) {
                     utterance.voice = selectedVoice;
-                    utterance.lang = selectedVoice.lang || 'es-ES';
+                    utterance.lang = selectedVoice.lang || 'en-US';
                 } else {
-                    utterance.lang = 'es-ES';
+                    utterance.lang = 'en-US';
                 }
                 utterance.rate = parseFloat(rateSlider.value);
                 utterance.volume = parseFloat(volumeSlider.value);
@@ -814,21 +814,21 @@
         forceDetectBtn.addEventListener('click', () => {
             if (!isAudioEnabled) toggleAudio();
             forceDetectBtn.disabled = true;
-            forceDetectBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Analizando...';
-            systemStatus.innerHTML = '<i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Analizando imagen...';
+            forceDetectBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Analyzing...';
+            systemStatus.innerHTML = '<i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Analyzing image...';
 
             fetch('/api/force_detection', { method: 'POST' })
                 .then(res => {
-                    if (!res.ok) throw new Error("Error en detección forzada");
+                    if (!res.ok) throw new Error("Error in forced detection");
                     return res.json();
                 })
                 .then(data => {
                     if (data && data.detection) {
-                        // Reiniciar lastSpokenDetection para que la detección forzada SIEMPRE se anuncie en voz alta
+                        // Reset lastSpokenDetection so forced detection is ALWAYS spoken aloud
                         lastSpokenDetection = "";
                         applyTelemetry({
                             distance: data.distance > 0 ? data.distance : 300,
-                            status: 'Detección forzada completada',
+                            status: 'Forced detection completed',
                             time: data.time || 0.15,
                             detection: data.detection
                         });
@@ -836,11 +836,11 @@
                 })
                 .catch(err => {
                     console.error(err);
-                    speak('No se pudo completar la detección forzada. Compruebe la cámara.');
+                    speak('Could not complete forced detection. Check camera feed.');
                 })
                 .finally(() => {
                     forceDetectBtn.disabled = false;
-                    forceDetectBtn.innerHTML = '<i class="fa-solid fa-bolt" aria-hidden="true"></i> Forzar detección';
+                    forceDetectBtn.innerHTML = '<i class="fa-solid fa-bolt" aria-hidden="true"></i> Force detection';
                 });
         });
 
@@ -849,13 +849,13 @@
             if (lastSpokenMessage) {
                 speak(lastSpokenMessage);
             } else {
-                speak('No hay ninguna identificación previa para repetir');
+                speak('No previous identification to repeat');
             }
         });
 
         testVoiceBtn.addEventListener('click', () => {
             if (!isAudioEnabled) toggleAudio();
-            speak('Prueba de síntesis de voz en español completada correctamente');
+            speak('Voice synthesis test completed successfully');
         });
 
         function updateDistance(dist) {
@@ -907,10 +907,10 @@
                 replayBtn.className = 'btn btn-secondary';
                 replayBtn.style.padding = 'var(--space-1) var(--space-2)';
                 replayBtn.style.fontSize = '0.75rem';
-                replayBtn.innerHTML = '<i class="fa-solid fa-volume-high" aria-hidden="true"></i> Escuchar';
+                replayBtn.innerHTML = '<i class="fa-solid fa-volume-high" aria-hidden="true"></i> Listen';
                 replayBtn.addEventListener('click', () => {
                     if (!isAudioEnabled) toggleAudio();
-                    const phrase = item.type === 'model' ? `Detectado: ${item.title}` : `Texto detectado: ${item.title}`;
+                    const phrase = item.type === 'model' ? `Detected: ${item.title}` : `Text detected: ${item.title}`;
                     speak(phrase);
                 });
 
@@ -956,7 +956,7 @@
                     resultValue.textContent = d.label;
                     resultDetail.textContent = `Confidence: ${Math.round((d.score || 0) * 100)}%`;
 
-                    const phrase = d.spoken_text || `Detectado: ${d.label}`;
+                    const phrase = d.spoken_text || `Detected: ${d.label}`;
                     lastSpokenMessage = phrase;
 
                     if (!isSameAsPrevious) {
@@ -1004,7 +1004,7 @@
                     label: 'Canned Chickpeas',
                     score: 0.94,
                     text: 'Model: Canned Chickpeas (0.94)',
-                    spoken_text: 'Detectado: Garbanzos en conserva',
+                    spoken_text: 'Detected: Canned Chickpeas',
                     timestamp: Date.now() / 1000
                 }
             });
@@ -1022,7 +1022,7 @@
                     label: 'ORGANIC TOMATO SAUCE 350G',
                     score: 0.0,
                     text: 'OCR Fallback: ORGANIC TOMATO SAUCE 350G',
-                    spoken_text: 'Texto detectado: SALSA DE TOMATE ECOLÓGICA 350G',
+                    spoken_text: 'Text detected: ORGANIC TOMATO SAUCE 350G',
                     timestamp: Date.now() / 1000
                 }
             });

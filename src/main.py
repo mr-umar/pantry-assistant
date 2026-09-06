@@ -229,73 +229,92 @@ def run_ocr_inference(frame_bgr):
     return "No text identified"
 
 def process_frame_detection(frame_to_process, dist=-1):
-    """Executes double model evaluation; if confidence < 80% in evaluations, falls back to RapidOCR."""
+    """Executes model inference. If first evaluation >= 80%, skips the second evaluation.
+    If first evaluation < 80%, runs a second evaluation. If both < 80%, falls back to RapidOCR."""
     global detection_counter, latest_detection, latest_result, latest_process_time, latest_status
     if frame_to_process is None:
         return None
 
     t0 = time.time()
 
-    # Evaluación 1 con el modelo
+    # Evaluation 1 with Edge Impulse Model
     label1, score1 = run_model_inference(frame_to_process)
 
-    # Pequeña pausa para capturar un segundo fotograma y evaluar consistencia
+    # If first evaluation confidence is >= 80%, skip second evaluation and confirm immediately
+    if label1 is not None and score1 >= CONFIDENCE_THRESHOLD:
+        detection_counter += 1
+        latest_result = f"Model: {label1} ({score1:.2f})"
+        latest_detection = {
+            "id": detection_counter,
+            "type": "model",
+            "label": label1,
+            "score": float(score1),
+            "text": latest_result,
+            "spoken_text": f"Detected: {label1}",
+            "timestamp": time.time()
+        }
+        dist_info = f" at {dist} mm" if dist > 0 else ""
+        print(f"[DETECTION] {latest_result} (confirmed in 1st evaluation >= 80%){dist_info}")
+        latest_process_time = time.time() - t0
+        latest_status = f"Identified: {label1}"
+        return latest_detection
+
+    # First evaluation was < 80%. Short pause to capture second frame and re-evaluate
+    score1_str = f"{score1:.2f}" if label1 else "0.00"
+    print(f"[MODEL CHECK] 1st eval low: {label1} ({score1_str}) < 80%. Running 2nd evaluation...")
+    latest_status = f"1st evaluation < 80% ({score1_str}). Verifying frame 2..."
+
     time.sleep(0.15)
     with frame_lock:
         frame_to_process_2 = None if current_frame_1080 is None else current_frame_1080.copy()
     if frame_to_process_2 is None:
         frame_to_process_2 = frame_to_process
 
-    # Evaluación 2 con el modelo
+    # Evaluation 2 with Edge Impulse Model
     label2, score2 = run_model_inference(frame_to_process_2)
 
-    # Verificar si en ambas evaluaciones la confianza es >= 80% y coincide la etiqueta
-    model_confirmed = (
-        label1 is not None and label2 is not None and
-        label1 == label2 and
-        score1 >= CONFIDENCE_THRESHOLD and score2 >= CONFIDENCE_THRESHOLD
-    )
-
-    if model_confirmed:
+    # If second evaluation is >= 80%, confirm model detection
+    if label2 is not None and score2 >= CONFIDENCE_THRESHOLD:
         detection_counter += 1
-        avg_score = (score1 + score2) / 2.0
-        latest_result = f"Model: {label1} ({avg_score:.2f})"
+        latest_result = f"Model: {label2} ({score2:.2f})"
         latest_detection = {
             "id": detection_counter,
             "type": "model",
-            "label": label1,
-            "score": float(avg_score),
+            "label": label2,
+            "score": float(score2),
             "text": latest_result,
-            "spoken_text": f"Detectado: {label1}",
+            "spoken_text": f"Detected: {label2}",
             "timestamp": time.time()
         }
         dist_info = f" at {dist} mm" if dist > 0 else ""
-        print(f"[DETECTION] {latest_result} (eval1: {score1:.2f}, eval2: {score2:.2f}){dist_info}")
-    else:
-        # Si la confianza es menor al 80% en las evaluaciones, recurrir a RapidOCR
-        score1_str = f"{score1:.2f}" if label1 else "0.00"
-        score2_str = f"{score2:.2f}" if label2 else "0.00"
-        print(f"[MODEL LOW] Eval 1: {label1} ({score1_str}), Eval 2: {label2} ({score2_str}) < 80%. Ejecutando OCR...")
-        latest_status = f"Confianza < 80% ({score1_str}, {score2_str}). Ejecutando OCR..."
+        print(f"[DETECTION] {latest_result} (confirmed in 2nd evaluation){dist_info}")
+        latest_process_time = time.time() - t0
+        latest_status = f"Identified: {label2}"
+        return latest_detection
 
-        ocr_text = run_ocr_inference(frame_to_process_2)
-        detection_counter += 1
-        latest_result = f"OCR Fallback: {ocr_text}"
-        spoken_msg = f"Texto detectado: {ocr_text}" if ocr_text != "No text identified" else "No se ha detectado texto legible"
-        latest_detection = {
-            "id": detection_counter,
-            "type": "ocr",
-            "label": ocr_text,
-            "score": 0.0,
-            "text": latest_result,
-            "spoken_text": spoken_msg,
-            "timestamp": time.time()
-        }
-        dist_info = f" at {dist} mm" if dist > 0 else ""
-        print(f"[FALLBACK] {latest_result}{dist_info}")
+    # Both evaluations have confidence < 80%, fall back to RapidOCR
+    score2_str = f"{score2:.2f}" if label2 else "0.00"
+    print(f"[MODEL LOW] Both evaluations < 80% (eval 1: {score1_str}, eval 2: {score2_str}). Running OCR...")
+    latest_status = f"Confidence < 80% ({score1_str}, {score2_str}). Running OCR..."
+
+    ocr_text = run_ocr_inference(frame_to_process_2)
+    detection_counter += 1
+    latest_result = f"OCR Fallback: {ocr_text}"
+    spoken_msg = f"Text detected: {ocr_text}" if ocr_text != "No text identified" else "No readable text detected"
+    latest_detection = {
+        "id": detection_counter,
+        "type": "ocr",
+        "label": ocr_text,
+        "score": 0.0,
+        "text": latest_result,
+        "spoken_text": spoken_msg,
+        "timestamp": time.time()
+    }
+    dist_info = f" at {dist} mm" if dist > 0 else ""
+    print(f"[FALLBACK] {latest_result}{dist_info}")
 
     latest_process_time = time.time() - t0
-    latest_status = f"Identificado: {latest_detection['label']}"
+    latest_status = f"Identified: {latest_detection['label']}"
     return latest_detection
 
 def automation_worker():
