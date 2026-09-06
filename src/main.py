@@ -25,8 +25,8 @@ app = Flask(__name__, template_folder=TEMPLATES_DIR)
 
 # Detection parameters
 CONFIDENCE_THRESHOLD = 0.50
-MIN_DISTANCE_MM = 200
-MAX_DISTANCE_MM = 400
+MIN_DISTANCE_MM = 250
+MAX_DISTANCE_MM = 500
 STABLE_SAMPLES = 3
 STABLE_TOLERANCE_MM = 30
 DETECTION_COOLDOWN_SEC = 2.0
@@ -38,7 +38,7 @@ current_frame_1080 = None
 frame_lock = threading.Lock()
 
 latest_distance = -1
-latest_status = "Waiting for stable object at 20-40 cm..."
+latest_status = "Waiting for stable object at 25-50 cm..."
 latest_result = "-"
 latest_process_time = 0.0
 
@@ -224,7 +224,7 @@ def run_ocr_inference(frame_bgr):
     return "No text identified"
 
 def automation_worker():
-    """Monitors stability between 200mm and 400mm and runs the detection pipeline."""
+    """Monitors stability between 250mm and 500mm and runs the detection pipeline."""
     global latest_distance, latest_status, latest_result, latest_process_time
     global detection_counter, latest_detection
     history = []
@@ -236,7 +236,7 @@ def automation_worker():
         # Range filter
         if dist < MIN_DISTANCE_MM or dist > MAX_DISTANCE_MM:
             history.clear()
-            latest_status = "Waiting for object at 20-40 cm..."
+            latest_status = "Waiting for object at 25-50 cm..."
             time.sleep(0.1)
             continue
 

@@ -45,7 +45,7 @@ The assistant helps individuals with low vision identify grocery packaging (e.g.
 |  |                           |       |         (Debian Linux)         |  |
 |  |  - Modulino Distance      |       |                                |  |
 |  |    (VL53L4CD ToF on Wire1)|  RPC  |  - UNIX Socket Bridge Client   |  |
-|  |  - Arduino_RouterBridge   | ----> |  - Stability Gating (20-40 cm) |  |
+|  |  - Arduino_RouterBridge   | ----> |  - Stability Gating (25-50 cm) |  |
 |  |    service provider       |       |  - Edge Impulse Model (.eim)   |  |
 |  +---------------------------+       |  - Fallback RapidOCR Engine    |  |
 |                                      |  - Flask Telemetry Streamer    |  |
@@ -58,7 +58,7 @@ The assistant helps individuals with low vision identify grocery packaging (e.g.
 - **Microprocessor (Qualcomm Dragonwing)**: A lightweight Python client queries measurements directly through `/var/run/arduino-router.sock` using standard MessagePack-RPC, bypassing bulky graphical wrappers.
 
 ### 2. Distance Gating & Stability Filter
-To prevent camera blur and unnecessary CPU usage, inference only triggers when a product is held steady within **200 mm to 400 mm** (20 to 40 cm) of the sensor across consecutive samples.
+To prevent camera blur and unnecessary CPU usage, inference only triggers when a product is held steady within **250 mm to 500 mm** (25 to 50 cm) of the sensor across consecutive samples.
 
 ### 3. Cascading AI Pipeline
 - **Primary Stage (Edge Impulse)**: Evaluates high-resolution camera frames using an on-device Edge Impulse model (`src/model.eim`) supporting both FOMO bounding boxes and classification.
