@@ -27,7 +27,7 @@ app = Flask(__name__, template_folder=TEMPLATES_DIR)
 CONFIDENCE_THRESHOLD = 0.80
 MIN_DISTANCE_MM = 250
 MAX_DISTANCE_MM = 500
-STABLE_SAMPLES = 3
+STABLE_SAMPLES = 10
 STABLE_TOLERANCE_MM = 30
 DETECTION_COOLDOWN_SEC = 2.0
 
@@ -43,7 +43,7 @@ current_frame_1080 = None
 frame_lock = threading.Lock()
 
 latest_distance = -1
-latest_status = "Waiting for stable object at 25-50 cm..."
+latest_status = "Waiting for stable object (1s) at 25-50 cm..."
 latest_result = "-"
 latest_process_time = 0.0
 
@@ -229,33 +229,56 @@ def run_ocr_inference(frame_bgr):
     return "No text identified"
 
 def process_frame_detection(frame_to_process, dist=-1):
-    """Executes Edge Impulse model or RapidOCR fallback on the frame and updates system state."""
+    """Executes double model evaluation; if confidence < 80% in evaluations, falls back to RapidOCR."""
     global detection_counter, latest_detection, latest_result, latest_process_time, latest_status
     if frame_to_process is None:
         return None
 
     t0 = time.time()
-    # Step 1: Run Edge Impulse model
-    label, score = run_model_inference(frame_to_process)
 
-    if label and score >= CONFIDENCE_THRESHOLD:
+    # Evaluación 1 con el modelo
+    label1, score1 = run_model_inference(frame_to_process)
+
+    # Pequeña pausa para capturar un segundo fotograma y evaluar consistencia
+    time.sleep(0.15)
+    with frame_lock:
+        frame_to_process_2 = None if current_frame_1080 is None else current_frame_1080.copy()
+    if frame_to_process_2 is None:
+        frame_to_process_2 = frame_to_process
+
+    # Evaluación 2 con el modelo
+    label2, score2 = run_model_inference(frame_to_process_2)
+
+    # Verificar si en ambas evaluaciones la confianza es >= 80% y coincide la etiqueta
+    model_confirmed = (
+        label1 is not None and label2 is not None and
+        label1 == label2 and
+        score1 >= CONFIDENCE_THRESHOLD and score2 >= CONFIDENCE_THRESHOLD
+    )
+
+    if model_confirmed:
         detection_counter += 1
-        latest_result = f"Model: {label} ({score:.2f})"
+        avg_score = (score1 + score2) / 2.0
+        latest_result = f"Model: {label1} ({avg_score:.2f})"
         latest_detection = {
             "id": detection_counter,
             "type": "model",
-            "label": label,
-            "score": float(score),
+            "label": label1,
+            "score": float(avg_score),
             "text": latest_result,
-            "spoken_text": f"Detectado: {label}",
+            "spoken_text": f"Detectado: {label1}",
             "timestamp": time.time()
         }
         dist_info = f" at {dist} mm" if dist > 0 else ""
-        print(f"[DETECTION] {latest_result}{dist_info}")
+        print(f"[DETECTION] {latest_result} (eval1: {score1:.2f}, eval2: {score2:.2f}){dist_info}")
     else:
-        score_str = f"{score:.2f}" if label else "0.00"
-        latest_status = f"Confidence low ({score_str}). Running OCR..."
-        ocr_text = run_ocr_inference(frame_to_process)
+        # Si la confianza es menor al 80% en las evaluaciones, recurrir a RapidOCR
+        score1_str = f"{score1:.2f}" if label1 else "0.00"
+        score2_str = f"{score2:.2f}" if label2 else "0.00"
+        print(f"[MODEL LOW] Eval 1: {label1} ({score1_str}), Eval 2: {label2} ({score2_str}) < 80%. Ejecutando OCR...")
+        latest_status = f"Confianza < 80% ({score1_str}, {score2_str}). Ejecutando OCR..."
+
+        ocr_text = run_ocr_inference(frame_to_process_2)
         detection_counter += 1
         latest_result = f"OCR Fallback: {ocr_text}"
         spoken_msg = f"Texto detectado: {ocr_text}" if ocr_text != "No text identified" else "No se ha detectado texto legible"
@@ -276,7 +299,7 @@ def process_frame_detection(frame_to_process, dist=-1):
     return latest_detection
 
 def automation_worker():
-    """Monitors stability between 250mm and 500mm and runs the detection pipeline."""
+    """Monitors stability for 1.0s (10 samples) between 250mm and 500mm and runs the detection pipeline."""
     global latest_distance, latest_status, latest_result, latest_process_time
     global detection_counter, latest_detection
     history = []
@@ -296,19 +319,23 @@ def automation_worker():
         if len(history) > STABLE_SAMPLES:
             history.pop(0)
 
-        # Stability verification
+        # Stability verification (1 second = 10 consecutive samples within tolerance)
         is_stable = False
         if len(history) == STABLE_SAMPLES:
             diff = max(history) - min(history)
             if diff <= STABLE_TOLERANCE_MM:
                 is_stable = True
+            else:
+                latest_status = f"Object moving (delta: {diff}mm)..."
+        else:
+            latest_status = f"Stabilizing object ({len(history)}/10)..."
 
         if is_stable:
             with frame_lock:
                 frame_to_process = None if current_frame_1080 is None else current_frame_1080.copy()
 
             if frame_to_process is not None:
-                latest_status = f"Object stable at {dist} mm. Evaluating..."
+                latest_status = f"Object stable (1s) at {dist} mm. Evaluating..."
                 process_frame_detection(frame_to_process, dist=dist)
                 history.clear()
                 time.sleep(DETECTION_COOLDOWN_SEC)
