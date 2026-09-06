@@ -6,11 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description"
         content="Autonomous Pantry Assistant running on Arduino UNO Q for low-vision object and text identification with browser speech synthesis.">
-    <meta property="og:title" content="Autonomous Pantry Assistant">
+    <meta property="og:title" content="Pantry Assistant">
     <meta property="og:description"
         content="Real-time pantry item recognition with Edge Impulse machine learning, RapidOCR, and browser audio readout.">
     <meta property="og:type" content="website">
-    <title>Autonomous Pantry Assistant - Arduino UNO Q</title>
+    <title>Pantry Assistant - Arduino UNO Q</title>
+    <!-- Font Awesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <style>
         :root {
             --space-1: 4px;
@@ -116,6 +118,9 @@
             font-weight: 700;
             letter-spacing: -0.01em;
             color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
         }
 
         .header-brand p {
@@ -140,6 +145,7 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            gap: var(--space-2);
             text-decoration: none;
             transition: background-color 0.15s ease, border-color 0.15s ease;
         }
@@ -213,6 +219,9 @@
             font-size: 1rem;
             font-weight: 700;
             color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
         }
 
         .live-indicator {
@@ -224,6 +233,9 @@
             border: 1px solid var(--border-default);
             background-color: var(--bg-subtle);
             color: var(--text-secondary);
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-1);
         }
 
         .video-container {
@@ -276,6 +288,9 @@
             font-size: 0.8125rem;
             font-weight: 600;
             color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
         }
 
         .telemetry-value {
@@ -295,8 +310,8 @@
 
         .range-highlight {
             position: absolute;
-            left: 41.67%;
-            width: 41.67%;
+            left: 33.33%;
+            width: 33.33%;
             height: 100%;
             background-color: var(--accent-success);
             opacity: 0.35;
@@ -401,6 +416,9 @@
             font-size: 0.8125rem;
             font-weight: 600;
             color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
         }
 
         select,
@@ -481,11 +499,11 @@
     <div class="container">
         <header class="app-header">
             <div class="header-brand">
-                <h1>Autonomous Pantry Assistant</h1>
+                <h1><i class="fa-solid fa-basket-shopping" aria-hidden="true"></i> Pantry assistant</h1>
             </div>
             <div class="header-controls">
                 <button id="btn-audio-toggle" type="button" class="btn btn-secondary" aria-pressed="false">
-                    Enable Browser Audio
+                    <i class="fa-solid fa-volume-xmark" aria-hidden="true"></i> Enable browser audio
                 </button>
             </div>
         </header>
@@ -493,8 +511,8 @@
         <main class="main-layout">
             <section class="card" aria-labelledby="heading-camera">
                 <div class="card-title-row">
-                    <h2 id="heading-camera">Camera Feed</h2>
-                    <span id="system-status" class="live-indicator">Standby</span>
+                    <h2 id="heading-camera"><i class="fa-solid fa-video" aria-hidden="true"></i> Camera Feed</h2>
+                    <span id="system-status" class="live-indicator"><i class="fa-solid fa-circle-dot" aria-hidden="true"></i> Standby</span>
                 </div>
 
                 <div class="video-container">
@@ -503,13 +521,13 @@
                 </div>
 
                 <div class="form-item">
-                    <label for="camera-select">Video Input Device</label>
+                    <label for="camera-select"><i class="fa-solid fa-camera" aria-hidden="true"></i> Video Input Device</label>
                     <select id="camera-select" aria-label="Select Video Camera Device"></select>
                 </div>
 
                 <div class="telemetry-group">
                     <div class="telemetry-header">
-                        <span class="telemetry-label">ToF Distance Sensor</span>
+                        <span class="telemetry-label"><i class="fa-solid fa-ruler-horizontal" aria-hidden="true"></i> ToF Distance Sensor</span>
                         <span class="telemetry-value"><span id="distance-readout">--</span> mm</span>
                     </div>
 
@@ -520,7 +538,7 @@
 
                     <div class="range-legend" aria-hidden="true">
                         <span>0 mm</span>
-                        <span>Optimal: 250 mm - 500 mm</span>
+                        <span>Optimal: 200 mm - 400 mm</span>
                         <span>600 mm+</span>
                     </div>
                 </div>
@@ -529,56 +547,56 @@
             <div style="display: flex; flex-direction: column; gap: var(--space-4);">
                 <section class="card" aria-labelledby="heading-detection">
                     <div class="card-title-row">
-                        <h2 id="heading-detection">Latest Recognition</h2>
+                        <h2 id="heading-detection"><i class="fa-solid fa-eye" aria-hidden="true"></i> Latest Recognition</h2>
                         <button id="btn-repeat" type="button" class="btn btn-secondary">
-                            Repeat Audio
+                            <i class="fa-solid fa-rotate-right" aria-hidden="true"></i> Repeat Audio
                         </button>
                     </div>
 
                     <div class="result-panel">
                         <div class="result-meta">
-                            <span id="result-badge" class="badge">Awaiting Item</span>
+                            <span id="result-badge" class="badge"><i class="fa-regular fa-clock" aria-hidden="true"></i> Awaiting Item</span>
                             <span id="result-timestamp" class="history-sub">--:--:--</span>
                         </div>
-                        <div id="result-value" class="result-text">Place an item 25 to 50 cm in front of camera</div>
+                        <div id="result-value" class="result-text">Place an item 20 to 40 cm in front of camera</div>
                         <div class="result-info">
-                            <span id="result-detail">Inference Pipeline: Edge Impulse / RapidOCR</span>
+                            <span id="result-detail"><i class="fa-solid fa-microchip" aria-hidden="true"></i> Inference Pipeline: Edge Impulse / RapidOCR</span>
                             <span id="result-time" class="history-sub">0.000 s</span>
                         </div>
                     </div>
 
                     <div class="button-bar">
                         <button id="btn-test-voice" type="button" class="btn btn-secondary">
-                            Test Voice
+                            <i class="fa-solid fa-play" aria-hidden="true"></i> Test Voice
                         </button>
                         <button id="btn-sim-model" type="button" class="btn btn-secondary">
-                            Simulate Model
+                            <i class="fa-solid fa-brain" aria-hidden="true"></i> Simulate Model
                         </button>
                         <button id="btn-sim-ocr" type="button" class="btn btn-secondary">
-                            Simulate OCR
+                            <i class="fa-solid fa-font" aria-hidden="true"></i> Simulate OCR
                         </button>
                     </div>
                 </section>
 
                 <section class="card" aria-labelledby="heading-speech">
                     <div class="card-title-row">
-                        <h2 id="heading-speech">Voice Configuration</h2>
-                        <span id="audio-state-text" class="live-indicator">Audio Muted</span>
+                        <h2 id="heading-speech"><i class="fa-solid fa-sliders" aria-hidden="true"></i> Voice Configuration</h2>
+                        <span id="audio-state-text" class="live-indicator"><i class="fa-solid fa-volume-xmark" aria-hidden="true"></i> Audio Muted</span>
                     </div>
 
                     <div class="form-grid">
                         <div class="form-item form-item-full">
-                            <label for="voice-select">System Speech Voice</label>
+                            <label for="voice-select"><i class="fa-solid fa-microphone-lines" aria-hidden="true"></i> System Speech Voice</label>
                             <select id="voice-select"></select>
                         </div>
 
                         <div class="form-item">
-                            <label for="speech-rate">Speech Rate: <span id="rate-display">1.0x</span></label>
+                            <label for="speech-rate"><i class="fa-solid fa-gauge-high" aria-hidden="true"></i> Speech Rate: <span id="rate-display">1.0x</span></label>
                             <input type="range" id="speech-rate" min="0.6" max="1.6" step="0.1" value="1.0">
                         </div>
 
                         <div class="form-item">
-                            <label for="speech-volume">Volume: <span id="volume-display">100%</span></label>
+                            <label for="speech-volume"><i class="fa-solid fa-volume-low" aria-hidden="true"></i> Volume: <span id="volume-display">100%</span></label>
                             <input type="range" id="speech-volume" min="0.1" max="1.0" step="0.05" value="1.0">
                         </div>
                     </div>
@@ -586,23 +604,19 @@
 
                 <section class="card" aria-labelledby="heading-history">
                     <div class="card-title-row">
-                        <h2 id="heading-history">Recognition Log</h2>
-                        <span id="history-total" class="live-indicator">0 events</span>
+                        <h2 id="heading-history"><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i> Recognition Log</h2>
+                        <span id="history-total" class="live-indicator"><i class="fa-solid fa-list-check" aria-hidden="true"></i> 0 events</span>
                     </div>
 
                     <div id="history-container" class="history-container">
                         <div
                             style="text-align: center; color: var(--text-muted); font-size: 0.875rem; padding: var(--space-4);">
-                            No recognition events logged yet
+                            <i class="fa-regular fa-clipboard" aria-hidden="true" style="margin-right: 6px;"></i> No recognition events logged yet
                         </div>
                     </div>
                 </section>
             </div>
         </main>
-
-        <footer class="app-footer">
-            Arduino UNO Q Dual-Core Architecture &bull; STM32U585 Real-Time Controller &bull; Qualcomm Dragonwing Linux
-        </footer>
     </div>
 
     <script type="module">
@@ -661,7 +675,7 @@
 
         cameraSelect.addEventListener('change', () => {
             const selectedIdx = parseInt(cameraSelect.value, 10);
-            systemStatus.textContent = 'Switching Camera...';
+            systemStatus.innerHTML = '<i class="fa-solid fa-arrows-rotate fa-spin" aria-hidden="true"></i> Switching Camera...';
             fetch(`/api/camera?index=${selectedIdx}`, { method: 'POST' })
                 .then(res => res.json())
                 .then(data => {
@@ -732,13 +746,13 @@
 
             if (isAudioEnabled) {
                 audioToggleBtn.className = 'btn btn-audio-active';
-                audioToggleBtn.textContent = 'Browser Audio Active';
-                audioStateText.textContent = 'Audio Enabled';
+                audioToggleBtn.innerHTML = '<i class="fa-solid fa-volume-high" aria-hidden="true"></i> Browser Audio Active';
+                audioStateText.innerHTML = '<i class="fa-solid fa-volume-high" aria-hidden="true"></i> Audio Enabled';
                 speak('Pantry assistant speech synthesis ready');
             } else {
                 audioToggleBtn.className = 'btn btn-secondary';
-                audioToggleBtn.textContent = 'Enable Browser Audio';
-                audioStateText.textContent = 'Audio Muted';
+                audioToggleBtn.innerHTML = '<i class="fa-solid fa-volume-xmark" aria-hidden="true"></i> Enable browser audio';
+                audioStateText.innerHTML = '<i class="fa-solid fa-volume-xmark" aria-hidden="true"></i> Audio Muted';
                 window.speechSynthesis.cancel();
             }
         }
@@ -781,7 +795,7 @@
                 const ratio = Math.min(100, Math.max(0, (dist / 600) * 100));
                 rangeMarker.style.left = `${ratio}%`;
 
-                if (dist >= 250 && dist <= 500) {
+                if (dist >= 200 && dist <= 400) {
                     targetBox.classList.add('active-range');
                 } else {
                     targetBox.classList.remove('active-range');
@@ -798,7 +812,7 @@
             recognitionHistory.unshift({ title, type, meta, timeStr });
             if (recognitionHistory.length > 25) recognitionHistory.pop();
 
-            historyTotal.textContent = `${recognitionHistory.length} events`;
+            historyTotal.innerHTML = `<i class="fa-solid fa-list-check" aria-hidden="true"></i> ${recognitionHistory.length} events`;
 
             historyContainer.innerHTML = '';
             recognitionHistory.forEach((item, index) => {
@@ -824,7 +838,7 @@
                 replayBtn.className = 'btn btn-secondary';
                 replayBtn.style.padding = 'var(--space-1) var(--space-2)';
                 replayBtn.style.fontSize = '0.75rem';
-                replayBtn.textContent = 'Listen';
+                replayBtn.innerHTML = '<i class="fa-solid fa-volume-high" aria-hidden="true"></i> Listen';
                 replayBtn.addEventListener('click', () => {
                     if (!isAudioEnabled) toggleAudio();
                     const phrase = item.type === 'model' ? `Detected: ${item.title}` : `Text detected: ${item.title}`;
@@ -839,20 +853,17 @@
 
         function applyTelemetry(data) {
             updateDistance(data.distance);
-            systemStatus.textContent = data.status || 'Scanning';
+            if (typeof data.camera_opened === 'boolean' && !data.camera_opened) {
+                systemStatus.innerHTML = '<i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> Camera Offline (Select Device)';
+                systemStatus.style.borderColor = 'var(--accent-danger)';
+                systemStatus.style.color = 'var(--accent-danger)';
+            } else {
+                systemStatus.innerHTML = `<i class="fa-solid fa-circle-dot" aria-hidden="true"></i> ${data.status || 'Scanning'}`;
+                systemStatus.style.borderColor = 'var(--border-default)';
+                systemStatus.style.color = 'var(--text-secondary)';
+            }
             if (typeof data.time === 'number') {
                 resultTime.textContent = `${data.time.toFixed(3)} s`;
-            }
-
-            if (typeof data.camera_opened === 'boolean') {
-                if (!data.camera_opened) {
-                    systemStatus.textContent = 'Camera Offline (Select Device)';
-                    systemStatus.style.borderColor = 'var(--accent-danger)';
-                    systemStatus.style.color = 'var(--accent-danger)';
-                } else {
-                    systemStatus.style.borderColor = 'var(--border-default)';
-                    systemStatus.style.color = 'var(--text-secondary)';
-                }
             }
 
             if (typeof data.camera_index === 'number' && data.camera_index !== currentCameraIndex) {
@@ -869,7 +880,7 @@
 
                 if (d.type === 'model') {
                     resultBadge.className = 'badge badge-model';
-                    resultBadge.textContent = 'Edge Impulse Model';
+                    resultBadge.innerHTML = '<i class="fa-solid fa-brain" aria-hidden="true"></i> Edge Impulse Model';
                     resultValue.textContent = d.label;
                     resultDetail.textContent = `Confidence: ${Math.round((d.score || 0) * 100)}%`;
 
@@ -877,7 +888,7 @@
                     speak(d.spoken_text || `Detected: ${d.label}`);
                 } else if (d.type === 'ocr') {
                     resultBadge.className = 'badge badge-ocr';
-                    resultBadge.textContent = 'RapidOCR Engine';
+                    resultBadge.innerHTML = '<i class="fa-solid fa-font" aria-hidden="true"></i> RapidOCR Engine';
                     resultValue.textContent = d.label || d.text;
                     resultDetail.textContent = 'Fallback Text Reading';
 
