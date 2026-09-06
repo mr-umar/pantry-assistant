@@ -62,7 +62,7 @@ To prevent camera blur and unnecessary CPU usage, inference only triggers when a
 
 ### 3. Cascading AI Pipeline
 - **Primary Stage (Edge Impulse)**: Evaluates high-resolution camera frames using an on-device Edge Impulse model (`src/model.eim`) supporting both FOMO bounding boxes and classification.
-- **Fallback Stage (RapidOCR)**: If the target product is not detected or the confidence score drops below 50%, the pipeline automatically forwards the frame to **RapidOCR** (ONNX Runtime) to extract packaging labels and brand text.
+- **Fallback Stage (RapidOCR)**: If the target product is not detected or the confidence score drops below 80%, the pipeline automatically forwards the frame to **RapidOCR** (ONNX Runtime) to extract packaging labels and brand text.
 
 ---
 

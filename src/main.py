@@ -24,7 +24,7 @@ ROUTER_SOCKET = "/var/run/arduino-router.sock"
 app = Flask(__name__, template_folder=TEMPLATES_DIR)
 
 # Detection parameters
-CONFIDENCE_THRESHOLD = 0.50
+CONFIDENCE_THRESHOLD = 0.80
 MIN_DISTANCE_MM = 250
 MAX_DISTANCE_MM = 500
 STABLE_SAMPLES = 3
