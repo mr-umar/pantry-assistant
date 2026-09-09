@@ -111,7 +111,7 @@ sudo apt update
 sudo apt install -y python3-pip python3-opencv python3-pyaudio portaudio19-dev python3-msgpack
 ```
 
-### 2. Install Python dependencies
+### 2. Install Python dependencies (The following command install system-wide use a virtual environment instead)
 ```bash
 pip install -r src/requirements.txt --break-system-packages
 ```
