@@ -6,9 +6,9 @@ Developed for **Hackestiu 2026** (Càtedra CHIP UPC & Qualcomm).
 
 ---
 
-## Authors & Affiliation
-- **Umar** ([@mr-umar](https://github.com/mr-umar)) & Team
-- Universitat Politècnica de Catalunya (UPC) — Barcelona, Spain
+## Authors
+- **Lluis Vidal** ([@Lluisvidal89](https://github.com/Lluisvidal89))
+- **Umar Mohammad** ([@mr-umar](https://github.com/mr-umar)) & Team
 
 ---
 
