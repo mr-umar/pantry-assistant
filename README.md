@@ -8,7 +8,7 @@ Developed for **Hackestiu 2026** (Càtedra CHIP UPC & Qualcomm).
 
 ## Authors
 - **Lluis Vidal** ([@Lluisvidal89](https://github.com/Lluisvidal89))
-- **Umar Mohammad** ([@mr-umar](https://github.com/mr-umar)) & Team
+- **Umar Mohammad** ([@mr-umar](https://github.com/mr-umar)) 
 
 ---
 
@@ -44,7 +44,7 @@ The assistant helps individuals with low vision identify grocery packaging (e.g.
 |  |     STM32U585 (MCU)       |       |  Qualcomm Dragonwing QRB2210   |  |
 |  |                           |       |         (Debian Linux)         |  |
 |  |  - Modulino Distance      |       |                                |  |
-|  |    (VL53L4CD ToF on Wire1)|  RPC  |  - UNIX Socket Bridge Client   |  |
+|  |                           |  RPC  |  - UNIX Socket Bridge Client   |  |
 |  |  - Arduino_RouterBridge   | ----> |  - Stability Gating (25-50 cm) |  |
 |  |    service provider       |       |  - Edge Impulse Model (.eim)   |  |
 |  +---------------------------+       |  - Fallback RapidOCR Engine    |  |
@@ -85,11 +85,19 @@ pantry-assistant/
 ---
 
 ## Hardware Bill of Materials
-- **Arduino UNO Q** (2GB or 4GB)
-- **Arduino Modulino Distance** (VL53L4CD ToF)
-- Standard Qwiic cable
-- USB UVC Webcam (1080p compatible)
-- USB Type-C Power Supply (5V/3A recommended)
+- **Arduino UNO Q** (2GB or 4GB)*
+- **Arduino Modulino Distance** (ABX00102)
+- **10cm Qwiic cable**
+- **Any USB Webcam** (1080p compatible)**
+- **USB Type-C Power Supply** 
+- **USB-C Hub for power and camera**
+
+* The 2GB version of the UNO Q should be enough for this project.
+** We used the provided Logitech Brio 105 with manual focus set to our needs, you can adjust the focus distance of your webcam by rotating the lens ring as shown on the following image:  
+
+![Webcam Focus](/media/lens_adjust.gif)
+
+Logitech ads glue to the ring which can be removed with isopropyl alcohol easily :)
 
 ---
 
