@@ -1,4 +1,4 @@
-# Autonomous Pantry Assistant for Low-Vision Users
+# Autonomous pantry assistant for low-Vision users
 
 ![Pantry Assistant](/media/pantry.png)
 
