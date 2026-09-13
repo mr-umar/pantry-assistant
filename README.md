@@ -95,11 +95,12 @@ To avoid blurry pictures and save computer power, the AI only works when you hol
 * **Arduino UNO Q** (2GB or 4GB)*
 * **Arduino Modulino Distance** (ABX00102)
 * **10cm Qwiic cable**
-* **Any USB Webcam** (1080p compatible)
+* **Any USB Webcam** (1080p compatible)**
 * **USB Type-C Power Supply** - **USB-C Hub for power and camera**
 
 * The 2GB version of the UNO Q should be enough for this project.
- We used the provided Logitech Brio 105 with manual focus set for our needs. You can adjust the focus of your webcam by turning the lens ring, as shown in the following image:
+ 
+**We used the provided Logitech Brio 105 with manual focus set for our needs. You can adjust the focus of your webcam by turning the lens ring, as shown in the following image:
 
 ![Webcam Focus](/media/lens_adjust.gif)
 
@@ -165,6 +166,11 @@ Check the 3D folder for the STL files if you need them.
 
 ---
 
+##AI Assistance Disclaimer
+Parts of the code and documentation in this repository were generated or refined with the assistance of AI tools. All AI-generated logic has been reviewed, tested, and modified by the authors to ensure it meets the specific hardware and software requirements of this project.
+
 ## License
 
 Developed for the **Hackestiu 2026** competition. Open source and available under the MIT License.
+
+
