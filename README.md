@@ -85,7 +85,7 @@ To avoid blurry pictures and save computer power, the AI only works when you hol
 ### Edge Impulse Machine Learning Pipeline
 - **Edge Impulse Project:** [Pantry Detector](https://studio.edgeimpulse.com/studio/1106136)
 - **Model Architecture:** YOLO-Pro (Float32 unoptimized for ARM Cortex-A)
-- **Dataset:** 220+ images automatically labeled with Gemini 3.5 Flash Lite (/Labelling/labelling.py)
+- **Dataset:** 220+ images [automatically labeled with Gemini 3.5 Flash Lite](/Labelling/labelling.py)
 - **Deployment:** Compiled standalone `.eim` binary targeting Arduino UNO Q
 
 ---
