@@ -166,7 +166,7 @@ Check the 3D folder for the STL files if you need them.
 
 ---
 
-##AI Assistance Disclaimer
+## AI Assistance Disclaimer
 Parts of the code and documentation in this repository were generated or refined with the assistance of AI tools. All AI-generated logic has been reviewed, tested, and modified by the authors to ensure it meets the specific hardware and software requirements of this project.
 
 ## License
