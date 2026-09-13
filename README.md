@@ -82,6 +82,12 @@ To avoid blurry pictures and save computer power, the AI only works when you hol
 * **Primary Stage (Edge Impulse)**: It checks high-quality camera images using an Edge Impulse model (`src/model.eim`) saved on the device. This model finds the product and identifies it.
 * **Fallback Stage (RapidOCR)**: If the system cannot find the product, or if it is not very sure (less than 80% confidence), it sends the image to **RapidOCR**. This tool reads the text and brand names on the packaging.
 
+### Edge Impulse Machine Learning Pipeline
+- **Edge Impulse Project:** [Pantry Detector](https://studio.edgeimpulse.com/studio/1106136)
+- **Model Architecture:** YOLO-Pro (Float32 unoptimized for ARM Cortex-A)
+- **Dataset:** 220+ images automatically labeled with Gemini 3.5 Flash Lite
+- **Deployment:** Compiled standalone `.eim` binary targeting Arduino UNO Q
+
 ---
 
 ## Hardware Bill of Materials
@@ -92,7 +98,7 @@ To avoid blurry pictures and save computer power, the AI only works when you hol
 * **Any USB Webcam** (1080p compatible)
 * **USB Type-C Power Supply** - **USB-C Hub for power and camera**
 
-* The 2GB version of the UNO Q is enough for this project.
+* The 2GB version of the UNO Q should be enough for this project.
  We used the provided Logitech Brio 105 with manual focus set for our needs. You can adjust the focus of your webcam by turning the lens ring, as shown in the following image:
 
 ![Webcam Focus](/media/lens_adjust.gif)
