@@ -1,4 +1,4 @@
-# Dataset Auto-Labelling
+# Dataset auto-labelling
 
 Automates bounding box annotations for pantry items using Google Gemini Flash Lite and exports directly into Edge Impulse format (`bounding_boxes.labels`).
 
