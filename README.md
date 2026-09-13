@@ -40,6 +40,10 @@ http://<ARDUINO_UNO_Q_IP>:5000
 
 ---
 
+## Demo
+
+[![Demo Hackestiu](https://img.youtube.com/vi/OMCTbtRUUI4/maxresdefault.jpg)](https://www.youtube.com/watch?v=OMCTbtRUUI4)
+
 ## System Architecture
 
 This assistant helps people with low vision identify grocery packages (like canned chickpeas or tomato sauce). It works entirely on the device without needing the internet. This guarantees zero delay and keeps your data completely private.
