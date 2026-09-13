@@ -42,6 +42,8 @@ http://<ARDUINO_UNO_Q_IP>:5000
 
 ## Demo
 
+Click to watch:
+
 [![Demo Hackestiu](https://img.youtube.com/vi/OMCTbtRUUI4/maxresdefault.jpg)](https://www.youtube.com/watch?v=OMCTbtRUUI4)
 
 ## System Architecture
